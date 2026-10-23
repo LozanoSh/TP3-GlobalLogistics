@@ -1,0 +1,72 @@
+x-api-common: &api-common
+  build:
+    context: ./service
+    dockerfile: Dockerfile
+  expose:
+    - "3000"
+  environment: &api-environment
+    PORT: "3000"
+  networks:
+    - backend
+  restart: unless-stopped
+  healthcheck:
+    # Siccardi debe implementar GET /health e incluir wget en la imagen,
+    # o adaptar este comando a una herramienta HTTP disponible en ella.
+    test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/health || exit 1"]
+    interval: 10s
+    timeout: 3s
+    retries: 3
+    start_period: 10s
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      # Archivo pendiente de implementación por Siccardi.
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
+    depends_on:
+      api1:
+        condition: service_healthy
+      api2:
+        condition: service_healthy
+      api3:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # La configuración futura de Nginx debe enrutar /health.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  api1:
+    <<: *api-common
+    hostname: api1
+    environment:
+      <<: *api-environment
+      INSTANCE_ID: api1
+
+  api2:
+    <<: *api-common
+    hostname: api2
+    environment:
+      <<: *api-environment
+      INSTANCE_ID: api2
+
+  api3:
+    <<: *api-common
+    hostname: api3
+    environment:
+      <<: *api-environment
+      INSTANCE_ID: api3
+
+networks:
+  backend:
+    driver: bridge
+    internal: true
+
