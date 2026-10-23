@@ -1,0 +1,45 @@
+# Dependencias
+node_modules/
+vendor/
+.venv/
+venv/
+
+# Variables locales y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs y temporales
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# Cobertura y artefactos generados
+coverage/
+dist/
+build/
+.cache/
+.nyc_output/
+
+# Resultados de pruebas de carga y evidencias generadas
+tests/results/
+evidencias/*
+!evidencias/.gitkeep
+
+# IDE y sistema operativo
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Docker local
+docker-compose.override.yml
+
