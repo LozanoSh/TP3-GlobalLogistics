@@ -29,10 +29,7 @@ build/
 .cache/
 .nyc_output/
 
-# Resultados de pruebas de carga y evidencias generadas
-tests/results/
-evidencias/*
-!evidencias/.gitkeep
+# Las capturas y los resultados seleccionados para la entrega se pueden versionar
 
 # IDE y sistema operativo
 .idea/

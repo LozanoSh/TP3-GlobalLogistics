@@ -9,10 +9,10 @@ Del TP2 se conservan dos decisiones aplicables: una entrada única delante de se
 ## Qué implementó Lozano
 
 - Creó la estructura `service/`, `nginx/`, `tests/`, `docs/` y `evidencias/`.
-- Preparó `.gitignore` para dependencias, variables locales, secretos, logs y resultados generados.
+- Preparó `.gitignore` para dependencias, variables locales, secretos y artefactos descartables, permitiendo versionar capturas en `evidencias/` y resultados seleccionados en `tests/results/`.
 - Definió en Compose exactamente cuatro servicios: `nginx`, `api1`, `api2` y `api3`.
-- Configuró una única compilación compartida para las tres APIs desde `service/Dockerfile`.
-- Definió la red bridge interna `backend` y publicó sólo Nginx mediante `8080:80`.
+- Declaró una misma imagen `tp3-globallogistics-api:local` para las tres APIs, construida desde `service/Dockerfile`.
+- Separó la red bridge no interna `frontend` de la red bridge interna `backend` y publicó sólo Nginx mediante `8080:80`.
 - Estableció el puerto interno `3000`, `PORT`, `INSTANCE_ID`, probes y dependencias basadas en salud.
 - Documentó los contratos de `/api/instancia`, `/health` y `/api/cpu`.
 - Validó la sintaxis y la expansión del manifiesto con Docker Compose.
@@ -24,7 +24,7 @@ No se implementó código de aplicación, Dockerfile, configuración de Nginx ni
 | Archivo | Estado y propósito |
 |---|---|
 | `docker-compose.yml` | Topología inicial y contratos de ejecución. |
-| `.gitignore` | Exclusiones de seguridad, dependencias y artefactos generados. |
+| `.gitignore` | Exclusiones de seguridad y artefactos descartables; admite evidencias y resultados de entrega. |
 | `README.md` | Contexto, arquitectura, responsabilidades, estado y próximos pasos. |
 | `docs/CONTRATOS_INTEGRACION.md` | Convenciones que Siccardi y Rivamar deben respetar. |
 | `docs/ENTREGA_LOZANO.md` | Este documento de continuidad. |
@@ -44,11 +44,11 @@ No se implementó código de aplicación, Dockerfile, configuración de Nginx ni
 | Réplica 2 | `api2` | `3000` | No publicado |
 | Réplica 3 | `api3` | `3000` | No publicado |
 
-Los cuatro servicios usan `backend`, declarada como `bridge` e `internal: true`. Nginx es el único acceso desde el host. Las APIs se descubren por DNS de Compose, nunca por IP fija.
+`nginx` usa `frontend`, una red `bridge` no interna, para recibir tráfico publicado en `localhost:8080`. También usa `backend`, declarada como `bridge` e `internal: true`, para llegar a las APIs. `api1`, `api2` y `api3` sólo usan `backend` y no publican puertos al host. Las APIs se descubren por DNS de Compose, nunca por IP fija.
 
 ### Tres réplicas explícitas
 
-Las réplicas están declaradas por separado porque la consigna pide tres instancias y Nginx debe referenciarlas de forma directa. Comparten el ancla `x-api-common`, que fija el mismo contexto de build, puerto, red, política de reinicio y health check. Sólo cambian `hostname` e `INSTANCE_ID`.
+Las réplicas están declaradas por separado porque la consigna pide tres instancias y Nginx debe referenciarlas de forma directa. Comparten el ancla `x-api-common`, que fija la imagen `tp3-globallogistics-api:local`, el mismo contexto de build (`service/Dockerfile`), puerto, red, política de reinicio y health check. Sólo cambian `hostname` e `INSTANCE_ID`.
 
 No debe reemplazarse esta forma por `deploy.replicas`, porque dificultaría nombrar los tres upstreams y `deploy` no tiene el mismo comportamiento fuera de Swarm.
 
@@ -73,7 +73,7 @@ Siccardi puede ajustar dentro de su implementación:
 - tiempos del probe si el arranque real lo requiere;
 - detalles de reinicio y manejo pasivo de fallos de Nginx.
 
-Debe conservar los cuatro nombres, los puertos, la red compartida, las tres réplicas explícitas y las rutas públicas.
+Debe conservar los cuatro nombres, los puertos, la separación entre `frontend` y `backend`, la imagen compartida, las tres réplicas explícitas y las rutas públicas.
 
 ## Trabajo que debe realizar Siccardi
 
@@ -151,13 +151,13 @@ docker compose down
 ## Validaciones realizadas por Lozano
 
 - Rama comprobada: `lozano`.
-- Estado inicial comprobado: limpio y sin trabajo ajeno para sobrescribir.
-- Ramas comprobadas: `main`, `lozano`, `siccardi` y `rivamar`, sin crear ramas adicionales.
 - Estructura y archivos obligatorios comprobados.
-- YAML expandido correctamente con `docker compose config` usando Docker Compose v5.4.0.
+- YAML expandido correctamente con `docker compose config` usando Docker Compose v5.5.1.
 - Servicios comprobados: un `nginx` y exactamente `api1`, `api2`, `api3`.
 - Publicación comprobada: `8080:80` sólo en Nginx.
-- Red comprobada: los cuatro servicios en `backend`, marcada como interna.
+- Redes comprobadas: `nginx` en `frontend` y `backend`; las tres APIs sólo en `backend`, marcada como interna.
+- Imagen comprobada: las tres APIs declaran `tp3-globallogistics-api:local` y el mismo `service/Dockerfile`.
+- `.gitignore` comprobado: permite capturas en `evidencias/` y resultados en `tests/results/`.
 - Dependencias pendientes identificadas y documentadas.
 
 No se ejecutó `docker compose up`, no se descargaron imágenes y no se realizaron pruebas de rendimiento.

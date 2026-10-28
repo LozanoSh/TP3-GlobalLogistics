@@ -27,8 +27,8 @@ Cliente -> localhost:8080 -> nginx:80
 ```
 
 - `nginx` será el único punto publicado en el host, mediante `8080:80`.
-- `api1`, `api2` y `api3` usarán el mismo `service/Dockerfile` y escucharán en el puerto interno `3000`.
-- Los cuatro contenedores compartirán la red bridge interna `backend`.
+- `api1`, `api2` y `api3` usarán la misma imagen `tp3-globallogistics-api:local`, construida desde `service/Dockerfile`, y escucharán en el puerto interno `3000`.
+- `nginx` se conectará a `frontend` (bridge no interna) para recibir solicitudes publicadas en `localhost:8080` y a `backend` (bridge interna) para comunicarse con las APIs. Las tres APIs estarán sólo en `backend`.
 - Compose comprobará `GET /health` en cada API antes de habilitar la dependencia de Nginx.
 - Cada réplica recibirá un `INSTANCE_ID` distinto, sin reemplazar la obligación de devolver su identidad real de contenedor.
 
@@ -75,7 +75,8 @@ Disponible en esta etapa:
 
 - estructura base del repositorio;
 - topología Compose con `nginx`, `api1`, `api2` y `api3`;
-- puerto, red, variables, dependencias y probes declarados;
+- imagen compartida, puerto, redes, variables, dependencias y probes declarados;
+- `.gitignore` permite versionar capturas en `evidencias/` y resultados seleccionados en `tests/results/`;
 - contratos de integración y traspaso técnico.
 
 Todavía no están disponibles:
@@ -91,6 +92,8 @@ En consecuencia, **no debe ejecutarse aún `docker compose up -d` esperando un d
 ```bash
 docker compose config
 ```
+
+La validación del manifiesto comprueba la estructura declarada; todavía no demuestra conectividad HTTP ni que la imagen pueda construirse, porque Siccardi debe aportar `service/Dockerfile` y `nginx/nginx.conf`.
 
 ## 9. Ejecución prevista al completar la integración
 

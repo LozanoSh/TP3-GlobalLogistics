@@ -11,9 +11,9 @@ Este documento fija las convenciones entre la infraestructura preparada por Loza
 | `api2` | `3000` | No | Segunda réplica del mismo microservicio. |
 | `api3` | `3000` | No | Tercera réplica del mismo microservicio. |
 
-Todos los servicios pertenecen a la red interna `backend`. Nginx debe resolver las réplicas por sus nombres de servicio (`api1:3000`, `api2:3000` y `api3:3000`); no se deben fijar direcciones IP de contenedor.
+`nginx` pertenece a `frontend` (bridge no interna) y a `backend` (bridge interna). Las tres APIs pertenecen sólo a `backend`. El puerto `8080:80` se publica únicamente en Nginx para recibir solicitudes desde `localhost:8080`. Nginx debe resolver las réplicas por sus nombres de servicio (`api1:3000`, `api2:3000` y `api3:3000`); no se deben fijar direcciones IP de contenedor.
 
-Las tres APIs se construyen desde `service/Dockerfile`. Compose les entrega `PORT=3000` y un `INSTANCE_ID` diferente. La identidad expuesta debe provenir del hostname o ID real del contenedor; `INSTANCE_ID` sirve como apoyo de diagnóstico, no para devolver una respuesta idéntica o ficticia desde todas las réplicas.
+Las tres APIs declaran la misma imagen `tp3-globallogistics-api:local`, construida desde `service/Dockerfile`. Compose les entrega `PORT=3000` y un `INSTANCE_ID` diferente. La identidad expuesta debe provenir del hostname o ID real del contenedor; `INSTANCE_ID` sirve como apoyo de diagnóstico, no para devolver una respuesta idéntica o ficticia desde todas las réplicas.
 
 ## `GET /api/instancia`
 

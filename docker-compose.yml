@@ -1,4 +1,5 @@
 x-api-common: &api-common
+  image: tp3-globallogistics-api:local
   build:
     context: ./service
     dockerfile: Dockerfile
@@ -27,6 +28,7 @@ services:
       # Archivo pendiente de implementación por Siccardi.
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
+      - frontend
       - backend
     depends_on:
       api1:
@@ -66,6 +68,8 @@ services:
       INSTANCE_ID: api3
 
 networks:
+  frontend:
+    driver: bridge
   backend:
     driver: bridge
     internal: true
