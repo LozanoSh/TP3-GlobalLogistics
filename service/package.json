@@ -1,0 +1,17 @@
+{
+  "name": "tp3-globallogistics-api",
+  "version": "1.0.0",
+  "description": "Microservicio REST de GlobalLogistics para el TP3: identidad de instancia, salud y carga de CPU.",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
