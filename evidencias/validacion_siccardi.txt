@@ -1,0 +1,155 @@
+
+===== Fecha y versiones =====
+2026-10-29T21:14:55Z
+Docker Engine 29.7.2
+Docker Compose version v5.4.0
+
+===== 1. Contenedores (docker compose ps) =====
+NAME                          IMAGE                           COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+tp3-globallogistics-api1-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api1      18 seconds ago   Up 17 seconds (healthy)   3000/tcp
+tp3-globallogistics-api2-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api2      18 seconds ago   Up 17 seconds (healthy)   3000/tcp
+tp3-globallogistics-api3-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api3      18 seconds ago   Up 17 seconds (healthy)   3000/tcp
+tp3-globallogistics-nginx-1   nginx:1.27-alpine               "/docker-entrypoint.…"   nginx     18 seconds ago   Up 12 seconds (healthy)   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+[OK]    Hay exactamente 4 contenedores
+
+===== 2-3. Health checks de Docker =====
+api1: healthy
+[OK]    api1 healthy
+api2: healthy
+[OK]    api2 healthy
+api3: healthy
+[OK]    api3 healthy
+nginx: healthy
+[OK]    nginx healthy
+
+===== Health público vía Nginx =====
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 29 Oct 2026 21:14:56 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 48
+Connection: keep-alive
+Cache-Control: no-store
+X-Instancia: api1
+X-Upstream: 172.21.0.2:3000
+
+{"estado":"ok","instancia":"api1","uptime_s":18}
+[OK]    GET /health -> 200
+
+===== 4-5. Balanceo round-robin en /api/instancia (9 peticiones) =====
+200 api3
+200 api1
+200 api2
+200 api3
+200 api1
+200 api2
+200 api3
+200 api1
+200 api2
+[OK]    Respondieron 3 réplicas distintas
+Respuesta completa de ejemplo:
+{"instancia":"api3","contenedor_id":"8d669a60a335281f460aa3d0254707d92f4a59e6cf52c109395e180f81fa2608","instance_id":"api3","pid":1,"servicio":"tp3-globallogistics-api","version":"1.0.0","node":"v22.23.4","uptime_s":18,"timestamp":"2026-10-29T21:14:56.480Z"}
+IDs reales de contenedor según Docker:
+/tp3-globallogistics-api1-1 f4d456f905de5f81d9b6894d2fed66701b52c60a8e93501bd95528f550f23296
+/tp3-globallogistics-api2-1 a1767ac1239d82dcc8d374ca3f78aafd2ff9cfbf94291c83fe27fdacccaaf3d7
+/tp3-globallogistics-api3-1 8d669a60a335281f460aa3d0254707d92f4a59e6cf52c109395e180f81fa2608
+/tp3-globallogistics-nginx-1 a94ff2e4c1cccf6d7a5759bce4ea905cdbd78e6a44aaf245a6384e4d38d4b86d
+
+===== 6. /api/cpu: carga válida e inválida =====
+work=1 -> {"instancia":"api1","work":1,"iteraciones":100000,"resultado":2958572957,"duracion_ms":2.3}
+work=100 -> {"instancia":"api2","work":100,"iteraciones":10000000,"resultado":857581641,"duracion_ms":101.23}
+work=500 -> {"instancia":"api3","work":500,"iteraciones":50000000,"resultado":3567780495,"duracion_ms":416.81}
+work=2000 -> {"instancia":"api1","work":2000,"iteraciones":200000000,"resultado":2236983822,"duracion_ms":1686.16}
+work='abc' -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"abc","instancia":"api2"}
+[OK]    work='abc' rechazado con 400
+work='0'   -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"0","instancia":"api3"}
+[OK]    work='0' rechazado con 400
+work='-5'  -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"-5","instancia":"api1"}
+[OK]    work='-5' rechazado con 400
+work='1.5' -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"1.5","instancia":"api2"}
+[OK]    work='1.5' rechazado con 400
+work='2001' -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"2001","instancia":"api3"}
+[OK]    work='2001' rechazado con 400
+work=''    -> 400 {"error":"Parámetro \"work\" inválido","detalle":"Debe ser un entero entre 1 y 2000.","recibido":"","instancia":"api1"}
+[OK]    work='' rechazado con 400
+[OK]    Sin work -> 400
+
+===== 7a. Caída controlada de api2 (docker compose stop api2) =====
+ Container tp3-globallogistics-api2-1 Stopping 
+ Container tp3-globallogistics-api2-1 Stopped 
+200 api1
+200 api3
+200 api1
+200 api3
+200 api1
+200 api3
+200 api1
+200 api3
+200 api1
+[OK]    Todas las respuestas 200 con api2 detenida
+[OK]    api2 no recibió tráfico
+
+===== 8a. Recuperación de api2 (docker compose start api2) =====
+ Container tp3-globallogistics-api2-1 Starting 
+ Container tp3-globallogistics-api2-1 Started 
+api2 healthy tras ~8 s
+200 api3
+200 api2
+200 api1
+200 api3
+200 api2
+200 api1
+200 api3
+200 api2
+200 api1
+[OK]    api2 vuelve a recibir tráfico
+
+===== 7b. Caída abrupta de api3 (docker compose kill api3, SIGKILL) =====
+ Container tp3-globallogistics-api3-1 Killing 
+ Container tp3-globallogistics-api3-1 Killed 
+200 api2
+200 api1
+200 api2
+200 api1
+200 api2
+200 api1
+200 api2
+200 api1
+200 api2
+[OK]    Todas las respuestas 200 con api3 caída
+Log de Nginx durante la caída (detección pasiva):
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:23 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:23 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 2026/10/29 21:15:25 [warn] 31#31: *73 upstream server temporarily disabled while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.4:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 2026/10/29 21:15:25 [error] 31#31: *73 upstream timed out (110: Operation timed out) while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.4:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000, 172.21.0.2:3000 up_status=504, 200 rt=2.009 urt=2.008, 0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+
+===== 8b. Recuperación de api3 (docker compose start api3) =====
+ Container tp3-globallogistics-api3-1 Starting 
+ Container tp3-globallogistics-api3-1 Started 
+api3 healthy tras ~8 s
+200 api1
+200 api3
+200 api2
+200 api1
+200 api3
+200 api2
+200 api1
+200 api3
+200 api2
+[OK]    api3 vuelve a recibir tráfico
+
+===== Estado final =====
+NAME                          IMAGE                           COMMAND                  SERVICE   CREATED              STATUS                        PORTS
+tp3-globallogistics-api1-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api1      About a minute ago   Up About a minute (healthy)   3000/tcp
+tp3-globallogistics-api2-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api2      About a minute ago   Up 39 seconds (healthy)       3000/tcp
+tp3-globallogistics-api3-1    tp3-globallogistics-api:local   "docker-entrypoint.s…"   api3      About a minute ago   Up 17 seconds (healthy)       3000/tcp
+tp3-globallogistics-nginx-1   nginx:1.27-alpine               "/docker-entrypoint.…"   nginx     About a minute ago   Up 59 seconds (healthy)       0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+
+===== Resultado =====
+VALIDACIÓN OK
