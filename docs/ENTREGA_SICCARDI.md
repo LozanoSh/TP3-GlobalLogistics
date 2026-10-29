@@ -31,6 +31,9 @@ Se respetó la topología fijada por Lozano en `docker-compose.yml` y `docs/CONT
 | `tests/validacion_siccardi.sh` | Nuevo | Validación funcional reproducible (no es prueba de estrés). |
 | `evidencias/validacion_siccardi.txt` | Nuevo | Salida real de la validación. |
 | `evidencias/logs_compose_validacion.txt` | Nuevo | Logs de Nginx y las APIs durante la validación. |
+| `evidencias/captura_*.png` | Nuevo | Capturas de `docker compose ps` y de `/api/instancia`. |
+| `evidencias/npm_test_resultado.txt` | Nuevo | Salida de `npm test`. |
+| `tests/capturar_evidencias.js` | Nuevo | Script que genera las capturas PNG. |
 | `docs/ENTREGA_SICCARDI.md` | Nuevo | Este documento. |
 | `README.md` | Modificado | Estado, estructura y ejecución actualizados. |
 | `service/.gitkeep`, `nginx/.gitkeep`, `tests/.gitkeep` | Eliminados | Los directorios ya tienen contenido. |
@@ -204,7 +207,25 @@ Ejecución real del 29/10/2026 en macOS con Docker Desktop (Docker Engine 29.7.2
 | 7b | Caída abrupta (`docker compose kill api3`) | OK: 9 de 9 solicitudes `200`. Una tardó ~2 s: Nginx agotó el `connect_timeout` contra `api3`, la marcó `temporarily disabled` y reintentó en `api2`. |
 | 8 | Recuperación | OK: `api2` y `api3` vuelven a `healthy` en ~8 s y a recibir tráfico. |
 
-Además, `npm test` en `service/` ejecuta 13 pruebas unitarias, todas exitosas.
+Además, `npm test` en `service/` ejecuta 13 pruebas unitarias, todas exitosas. Salida completa en [`evidencias/npm_test_resultado.txt`](../evidencias/npm_test_resultado.txt).
+
+### Capturas de pantalla
+
+Tomadas el 29/10/2026 con el entorno levantado y los cuatro contenedores `healthy`. Las genera [`tests/capturar_evidencias.js`](../tests/capturar_evidencias.js) con Chromium headless (Playwright): ejecuta los comandos en el momento contra el entorno real y captura su salida sin editarla. Las capturas de navegador muestran la respuesta real del endpoint; sólo se ocultó la barra "Pretty-print" del visor JSON de Chrome y se agregó un encabezado con la URL, el número de carga y la hora.
+
+**`docker compose ps`: cuatro contenedores saludables y sólo Nginx publicado en `8080`.**
+
+![docker compose ps](../evidencias/captura_01_docker_compose_ps.png)
+
+**Nueve solicitudes consecutivas a `/api/instancia`: rotación `api2 → api3 → api1` con tres `contenedor_id` reales distintos.**
+
+![Solicitudes consecutivas a /api/instancia](../evidencias/captura_02_api_instancia_consecutivas.png)
+
+**Tres cargas consecutivas de `http://localhost:8080/api/instancia` en el navegador, cada una atendida por una réplica distinta.**
+
+![Carga 1: api1](../evidencias/captura_03_navegador_api_instancia_1_api1.png)
+![Carga 2: api2](../evidencias/captura_03_navegador_api_instancia_2_api2.png)
+![Carga 3: api3](../evidencias/captura_03_navegador_api_instancia_3_api3.png)
 
 Extracto de la detección pasiva durante la caída abrupta de `api3`:
 
