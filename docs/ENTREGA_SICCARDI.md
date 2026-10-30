@@ -207,7 +207,7 @@ Ejecución real del 29/10/2026 en macOS con Docker Desktop (Docker Engine 29.7.2
 | 7b | Caída abrupta (`docker compose kill api3`) | OK: 9 de 9 solicitudes `200`. Una tardó ~2 s: Nginx agotó el `connect_timeout` contra `api3`, la marcó `temporarily disabled` y reintentó en `api2`. |
 | 8 | Recuperación | OK: `api2` y `api3` vuelven a `healthy` en ~8 s y a recibir tráfico. |
 
-Además, `npm test` en `service/` ejecuta 13 pruebas unitarias, todas exitosas. Salida completa en [`evidencias/npm_test_resultado.txt`](../evidencias/npm_test_resultado.txt).
+En la entrega original de Siccardi, `npm test` en `service/` ejecutó 13 pruebas exitosas; esa salida histórica está en [`evidencias/npm_test_resultado.txt`](../evidencias/npm_test_resultado.txt). La adaptación posterior de Envios amplió la suite a 28 pruebas (ver `evidencias/npm_test_envios.txt`).
 
 ### Capturas de pantalla
 
@@ -247,6 +247,10 @@ No se ejecutaron pruebas de estrés ni se midieron percentiles: corresponden a l
 - **Docker Desktop en macOS.** Las pruebas se hicieron en una VM de Docker Desktop. En Linux nativo los tiempos absolutos pueden diferir.
 
 ## Pendiente para Rivamar
+
+### Actualización de Lozano: escenario de negocio
+
+Para el escenario funcional de Envios, Rivamar debe enviar solicitudes JSON válidas a **`POST http://localhost:8080/envios/validar`**. La operación valida el alta y permite observar el balanceo por `instancia`, `contenedor_id` y `X-Instancia`; no crea ni persiste envíos. Para saturación de CPU debe usar **`GET http://localhost:8080/api/cpu?work=N`** según los límites y cautelas anteriores. Las latencias de validación del TP3 no incluyen autenticación, base de datos, idempotencia, transacción ni outbox del TP2. La prueba funcional previa a los escenarios de carga es `node tests/validacion_envios.js`.
 
 1. Elegir y documentar la herramienta de carga (por ejemplo `k6`, `autocannon`, `hey` o `wrk`) y guardar los scripts en `tests/`.
 2. Escenario 1: concurrencia moderada sobre `/api/instancia` o `/api/cpu` con `work` bajo.

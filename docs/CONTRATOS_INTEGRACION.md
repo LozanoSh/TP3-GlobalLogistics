@@ -1,5 +1,20 @@
 # Contratos de integración
 
+> Actualización de Lozano: el servicio replicado representa Gestión de Envíos. La descripción histórica de la preparación de infraestructura se conserva debajo.
+
+## `POST /envios/validar`
+
+Valida una solicitud de alta internacional con la estructura `CrearEnvioRequest` del OpenAPI del TP2. Nginx reenvía el body JSON a una de las tres réplicas sin caché ni reintento automático del POST. La API no persiste datos.
+
+- Entrada: `Content-Type: application/json`, con `remitente`, `destinatario`, `paquete` y `servicio` obligatorios; `referenciaCliente` es opcional.
+- Cada dirección requiere `nombre` (2–120 caracteres), `pais` (dos letras mayúsculas), `direccion` (5–200) y `codigoPostal` (2–20).
+- El paquete requiere `pesoKg` (0.01–1000), `descripcion` (3–300) y `valorDeclarado` con `moneda` (tres letras mayúsculas) y `montoMinor` (entero positivo `int64`, validado a partir del literal JSON para conservar precisión).
+- `servicio`: `ESTANDAR` o `EXPRESS`. `referenciaCliente`, si se envía, admite 1–64 caracteres. Como en el OpenAPI del TP2, se rechazan propiedades adicionales.
+- Éxito: HTTP `200`, `valido: true`, nombre de servicio, tipo, origen, destino, peso, hostname de la réplica e ID real del contenedor.
+- Error de estructura, tipo, rango, formato o JSON malformado: HTTP `400`, `valido: false` y lista `errores` con `campo` y `detalle`.
+
+`POST /envios/validar` no equivale a `POST /envios/crear`: no autentica, no reserva claves de idempotencia, no crea un `envioId`, no escribe en una base de datos ni publica eventos mediante outbox. Ver [ADAPTACION_TP2_TP3.md](ADAPTACION_TP2_TP3.md).
+
 Este documento fija las convenciones entre la infraestructura preparada por Lozano, la implementación de Siccardi y las pruebas de Rivamar. No contiene código de los endpoints.
 
 ## Servicios y conectividad

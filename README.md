@@ -12,9 +12,9 @@ GlobalLogistics S.A. necesita comprobar que una arquitectura distribuida puede e
 
 ## 3. Relación con el TP2
 
-El TP2 propuso una arquitectura distribuida con una entrada unificada, servicios de dominio sin estado, bases de datos independientes y eventos para los procesos asíncronos. De esa propuesta se reutilizan en este TP los principios de entrada única y escalado horizontal.
+El microservicio elegido del TP2 es **Gestión de Envíos**. Este TP3 implementa `POST /envios/validar`: comprueba la estructura y las reglas básicas de una solicitud de alta internacional sin registrarla. Conserva los endpoints técnicos para demostrar balanceo, salud y carga de CPU.
 
-El contrato `POST /envios/crear` del TP2 no forma parte de esta primera implementación. El TP3 incorpora endpoints técnicos específicos para demostrar balanceo y medir rendimiento; sus contratos están en [docs/CONTRATOS_INTEGRACION.md](docs/CONTRATOS_INTEGRACION.md).
+El contrato completo `POST /envios/crear` del TP2 requiere autenticación, idempotencia, persistencia transaccional y outbox. Este prototipo no ofrece esas garantías ni devuelve un `envioId`. La comparación detallada está en [docs/ADAPTACION_TP2_TP3.md](docs/ADAPTACION_TP2_TP3.md); los contratos del TP3 están en [docs/CONTRATOS_INTEGRACION.md](docs/CONTRATOS_INTEGRACION.md).
 
 ## 4. Arquitectura
 
@@ -29,14 +29,15 @@ Cliente -> localhost:8080 -> nginx:80
 - `nginx` (1.27, Open Source) es el único punto publicado en el host, mediante `8080:80`, y reparte las solicitudes en round-robin entre las tres réplicas.
 - `api1`, `api2` y `api3` usan la misma imagen `tp3-globallogistics-api:local` (Node.js 22 + Express), construida desde `service/Dockerfile`, y escuchan en el puerto interno `3000`.
 - `nginx` se conecta a `frontend` (bridge no interna) para recibir solicitudes publicadas en `localhost:8080` y a `backend` (bridge interna) para comunicarse con las APIs. Las tres APIs están sólo en `backend`.
-- Compose comprueba `GET /health` en cada API antes de habilitar la dependencia de Nginx. Nginx detecta de forma pasiva las réplicas que fallan (`max_fails=2`, `fail_timeout=10s`) y reintenta la solicitud en otra.
+- Compose comprueba `GET /health` en cada API antes de habilitar la dependencia de Nginx. Nginx detecta de forma pasiva las réplicas que fallan (`max_fails=2`, `fail_timeout=10s`) y puede reintentar los GET técnicos en otra; para `POST /envios/validar` el reintento está desactivado.
 - Cada réplica devuelve su hostname y el ID real de su contenedor; `INSTANCE_ID` queda como apoyo de diagnóstico.
 
 Endpoints públicos en `http://localhost:8080`:
 
 | Ruta | Uso |
 |---|---|
-| `GET /api/instancia` | Identidad de la réplica que respondió. |
+| `POST /envios/validar` | Valida una solicitud de alta de envío; `200` si es válida, `400` con errores si no. No crea el envío. |
+| `GET /api/instancia` | Identidad de la réplica que respondió y nombre del servicio Gestión de Envíos. |
 | `GET /health` | Salud de una réplica a través de Nginx (`200` si está sana). |
 | `GET /api/cpu?work=N` | Trabajo de CPU real, `N` entero entre `1` y `2000`; otros valores → `400`. |
 | `GET /nginx-health` | Salud del propio Nginx, sin consultar las APIs. |
@@ -52,13 +53,15 @@ El detalle de endpoints, health checks, decisiones de balanceo y evidencias est�
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── src/                    # app.js (endpoints) y server.js (arranque)
-│   └── test/                   # Pruebas unitarias (npm test)
+│   └── test/                   # Pruebas HTTP locales (npm test)
 ├── nginx/
 │   └── nginx.conf              # Balanceo round-robin y manejo de fallos
 ├── tests/
-│   └── validacion_siccardi.sh  # Validación funcional (pruebas de carga: pendientes)
+│   ├── validacion_siccardi.sh  # Validación funcional anterior
+│   └── validacion_envios.js    # Validación funcional de Envios por Nginx
 ├── docs/
 │   ├── CONTRATOS_INTEGRACION.md
+│   ├── ADAPTACION_TP2_TP3.md
 │   ├── ENTREGA_LOZANO.md
 │   └── ENTREGA_SICCARDI.md
 ├── evidencias/                 # Registros de validación y capturas
@@ -66,7 +69,7 @@ El detalle de endpoints, health checks, decisiones de balanceo y evidencias est�
 └── README.md
 ```
 
-Los directorios todavía vacíos se conservan con archivos `.gitkeep`.
+Las evidencias anteriores de Siccardi se conservan en `evidencias/`.
 
 ## 6. Distribución de responsabilidades
 
@@ -92,7 +95,7 @@ El trabajo se integra de forma secuencial: Lozano → Siccardi → Rivamar → r
 Disponible (etapas de Lozano y Siccardi):
 
 - estructura base, topología Compose con `nginx`, `api1`, `api2` y `api3`, redes y probes;
-- microservicio REST con `/api/instancia`, `/health` y `/api/cpu`, y 13 pruebas unitarias;
+- microservicio de Envios con `/envios/validar` y los endpoints técnicos `/api/instancia`, `/health` y `/api/cpu`;
 - `service/Dockerfile` con una única imagen para las tres réplicas;
 - `nginx/nginx.conf` con balanceo round-robin, timeouts, detección pasiva de fallos y reintento en otra réplica;
 - validación funcional de extremo a extremo (`tests/validacion_siccardi.sh`) con evidencias en `evidencias/`;
@@ -109,6 +112,7 @@ Pendiente:
 docker compose config -q
 docker compose up -d --build
 docker compose ps                       # 4 contenedores (healthy)
+node tests/validacion_envios.js          # POST real por Nginx, tres replicas y regresion
 curl http://localhost:8080/health
 curl http://localhost:8080/api/instancia
 curl 'http://localhost:8080/api/cpu?work=500'
@@ -122,17 +126,25 @@ Para ver el reparto entre réplicas:
 for i in $(seq 1 9); do curl -s http://localhost:8080/api/instancia | grep -o '"instancia":"[^"]*"'; done
 ```
 
-Pruebas unitarias del servicio (requiere Node.js 20 o superior):
+Pruebas HTTP locales del servicio (requiere Node.js 22 o superior):
 
 ```bash
-cd service && npm install && npm test
+cd service && npm ci && npm test
 ```
+
+Ejemplo de solicitud funcional (desde la raíz del repositorio):
+
+```bash
+curl -i -X POST http://localhost:8080/envios/validar -H 'Content-Type: application/json' -d '{"remitente":{"nombre":"Empresa Ejemplo S.A.","pais":"AR","direccion":"Av. San Martin 1200, Mendoza","codigoPostal":"5500"},"destinatario":{"nombre":"Comercio Ejemplo Ltda.","pais":"CL","direccion":"Av. Providencia 1500, Santiago","codigoPostal":"7500000"},"paquete":{"pesoKg":2.5,"descripcion":"Repuestos mecanicos","valorDeclarado":{"moneda":"USD","montoMinor":14500}},"servicio":"EXPRESS"}'
+```
+
+La respuesta `200` contiene `valido`, `servicio`, `tipoEnvio`, `origen`, `destino`, `pesoKg`, `instancia` y `contenedor_id`; los errores de estructura o formato reciben `400` con `errores` por campo.
 
 Las instrucciones de pruebas de carga se incorporarán en la etapa de Rivamar.
 
 ## 10. Próximos pasos
 
-1. Rivamar añadirá escenarios reproducibles de concurrencia moderada y saturación de CPU, con latencia promedio, p95 y p99. Las recomendaciones de valores de `work` están en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
+1. Rivamar añadirá escenarios reproducibles de concurrencia moderada con `POST /envios/validar` y saturación de CPU con `GET /api/cpu?work=N`, con latencia promedio, p95 y p99. Las recomendaciones de valores de `work` están en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
 2. Lozano realizará la revisión, integración y documentación final sin fusionar automáticamente a `main`.
 
 Historial de traspasos: [docs/ENTREGA_LOZANO.md](docs/ENTREGA_LOZANO.md) y [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).

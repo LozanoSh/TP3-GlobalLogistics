@@ -1,0 +1,25 @@
+Validación de la adaptación a Envios — 2026-10-30 (Windows, Node v22.21.1)
+
+Comando: npm ci --offline=false (desde service/)
+Resultado: exit 0; 68 paquetes instalados; 0 vulnerabilidades informadas por npm.
+
+Comando: npm test (desde service/)
+Resultado: exit 0; 28 pruebas, 28 aprobadas, 0 fallidas.
+Salida completa: evidencias/npm_test_envios.txt
+
+Comando: docker compose config (desde la raíz)
+Resultado: exit 0; servicios api1, api2, api3 y nginx; una imagen compartida
+para las APIs, redes backend/frontend y única publicación 8080:80 en nginx.
+
+Comando: docker compose up -d --build
+Resultado: exit 1; el daemon Docker Desktop no estaba disponible:
+failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine;
+The system cannot find the file specified.
+
+Comando: docker compose ps
+Resultado: exit 1 por la misma ausencia del daemon.
+
+No se pudo ejecutar tests/validacion_envios.js por Nginx ni verificar salud o
+round-robin de los cuatro contenedores en este equipo. El script queda listo
+para ejecutarse cuando Docker Desktop esté operativo. No se atribuye a este
+entorno la evidencia anterior de Siccardi.
