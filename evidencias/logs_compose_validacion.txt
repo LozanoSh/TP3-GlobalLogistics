@@ -1,0 +1,86 @@
+api3-1  | [api3] escuchando en 0.0.0.0:3000 (CPU_WORK_MAX=2000)
+api3-1  | [api3] escuchando en 0.0.0.0:3000 (CPU_WORK_MAX=2000)
+api1-1  | [api1] escuchando en 0.0.0.0:3000 (CPU_WORK_MAX=2000)
+api2-1  | [api2] escuchando en 0.0.0.0:3000 (CPU_WORK_MAX=2000)
+api2-1  | [api2] SIGTERM recibido, cerrando
+api2-1  | [api2] escuchando en 0.0.0.0:3000 (CPU_WORK_MAX=2000)
+nginx-1  | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+nginx-1  | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+nginx-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+nginx-1  | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+nginx-1  | 10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+nginx-1  | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+nginx-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+nginx-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+nginx-1  | /docker-entrypoint.sh: Configuration complete; ready for start up
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:14:48 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.000
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.000
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/cpu?work=1 HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.005 urt=0.005
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:56 +0000] "GET /api/cpu?work=100 HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.103 urt=0.103
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:57 +0000] "GET /api/cpu?work=500 HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.418 urt=0.418
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=2000 HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=1.687 urt=1.687
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=abc HTTP/1.1" 400 upstream=172.21.0.3:3000 up_status=400 rt=0.000 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=0 HTTP/1.1" 400 upstream=172.21.0.4:3000 up_status=400 rt=0.001 urt=0.000
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=-5 HTTP/1.1" 400 upstream=172.21.0.2:3000 up_status=400 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=1.5 HTTP/1.1" 400 upstream=172.21.0.3:3000 up_status=400 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work=2001 HTTP/1.1" 400 upstream=172.21.0.4:3000 up_status=400 rt=0.000 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu?work= HTTP/1.1" 400 upstream=172.21.0.2:3000 up_status=400 rt=0.000 urt=0.001
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:14:58 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.000 urt=0.000
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:58 +0000] "GET /api/cpu HTTP/1.1" 400 upstream=172.21.0.4:3000 up_status=400 rt=0.000 urt=0.000
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:14:59 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 2026/10/29 21:15:01 [error] 32#32: *41 upstream timed out (110: Operation timed out) while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.3:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:01 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000, 172.21.0.4:3000 up_status=504, 200 rt=2.010 urt=2.006, 0.004
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:01 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 2026/10/29 21:15:03 [warn] 32#32: *45 upstream server temporarily disabled while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.3:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 2026/10/29 21:15:03 [error] 32#32: *45 upstream timed out (110: Operation timed out) while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.3:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000, 172.21.0.4:3000 up_status=504, 200 rt=2.007 urt=2.004, 0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:03 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:15:08 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:15:18 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.004 urt=0.004
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.003 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:20 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 2026/10/29 21:15:23 [error] 31#31: *69 upstream timed out (110: Operation timed out) while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.4:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:23 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000, 172.21.0.3:3000 up_status=504, 200 rt=2.003 urt=2.002, 0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:23 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:23 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 2026/10/29 21:15:25 [warn] 31#31: *73 upstream server temporarily disabled while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.4:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 2026/10/29 21:15:25 [error] 31#31: *73 upstream timed out (110: Operation timed out) while connecting to upstream, client: 192.168.65.1, server: _, request: "GET /api/instancia HTTP/1.1", upstream: "http://172.21.0.4:3000/api/instancia", host: "localhost:8080"
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000, 172.21.0.2:3000 up_status=504, 200 rt=2.009 urt=2.008, 0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:25 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:15:28 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 127.0.0.1 [29/Oct/2026:21:15:39 +0000] "GET /health HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.004 urt=0.004
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.003 urt=0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.002 urt=0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.003
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.2:3000 up_status=200 rt=0.001 urt=0.002
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.4:3000 up_status=200 rt=0.002 urt=0.001
+nginx-1  | 192.168.65.1 [29/Oct/2026:21:15:42 +0000] "GET /api/instancia HTTP/1.1" 200 upstream=172.21.0.3:3000 up_status=200 rt=0.001 urt=0.001

@@ -4,7 +4,7 @@
 
 Trabajo Práctico N.º 3 de Arquitectura de Sistemas de la Universidad Champagnat. El objetivo es desplegar con Infraestructura como Código un entorno cloud-native local que permita observar balanceo de carga, disponibilidad de réplicas y comportamiento de latencia bajo carga.
 
-La consigna final requiere exactamente un balanceador, tres réplicas del microservicio, health checks y dos escenarios de estrés. Este repositorio se encuentra todavía en la etapa de infraestructura inicial de Lozano.
+La consigna final requiere exactamente un balanceador, tres réplicas del microservicio, health checks y dos escenarios de estrés. El repositorio tiene completas la infraestructura inicial de Lozano y la etapa de Siccardi (API, imagen, Nginx y balanceo). Falta la etapa de pruebas de estrés de Rivamar.
 
 ## 2. Contexto de GlobalLogistics
 
@@ -16,7 +16,7 @@ El TP2 propuso una arquitectura distribuida con una entrada unificada, servicios
 
 El contrato `POST /envios/crear` del TP2 no forma parte de esta primera implementación. El TP3 incorpora endpoints técnicos específicos para demostrar balanceo y medir rendimiento; sus contratos están en [docs/CONTRATOS_INTEGRACION.md](docs/CONTRATOS_INTEGRACION.md).
 
-## 4. Arquitectura prevista
+## 4. Arquitectura
 
 ```text
 Cliente -> localhost:8080 -> nginx:80
@@ -26,24 +26,42 @@ Cliente -> localhost:8080 -> nginx:80
                    api1:3000 api2:3000 api3:3000
 ```
 
-- `nginx` será el único punto publicado en el host, mediante `8080:80`.
-- `api1`, `api2` y `api3` usarán la misma imagen `tp3-globallogistics-api:local`, construida desde `service/Dockerfile`, y escucharán en el puerto interno `3000`.
-- `nginx` se conectará a `frontend` (bridge no interna) para recibir solicitudes publicadas en `localhost:8080` y a `backend` (bridge interna) para comunicarse con las APIs. Las tres APIs estarán sólo en `backend`.
-- Compose comprobará `GET /health` en cada API antes de habilitar la dependencia de Nginx.
-- Cada réplica recibirá un `INSTANCE_ID` distinto, sin reemplazar la obligación de devolver su identidad real de contenedor.
+- `nginx` (1.27, Open Source) es el único punto publicado en el host, mediante `8080:80`, y reparte las solicitudes en round-robin entre las tres réplicas.
+- `api1`, `api2` y `api3` usan la misma imagen `tp3-globallogistics-api:local` (Node.js 22 + Express), construida desde `service/Dockerfile`, y escuchan en el puerto interno `3000`.
+- `nginx` se conecta a `frontend` (bridge no interna) para recibir solicitudes publicadas en `localhost:8080` y a `backend` (bridge interna) para comunicarse con las APIs. Las tres APIs están sólo en `backend`.
+- Compose comprueba `GET /health` en cada API antes de habilitar la dependencia de Nginx. Nginx detecta de forma pasiva las réplicas que fallan (`max_fails=2`, `fail_timeout=10s`) y reintenta la solicitud en otra.
+- Cada réplica devuelve su hostname y el ID real de su contenedor; `INSTANCE_ID` queda como apoyo de diagnóstico.
+
+Endpoints públicos en `http://localhost:8080`:
+
+| Ruta | Uso |
+|---|---|
+| `GET /api/instancia` | Identidad de la réplica que respondió. |
+| `GET /health` | Salud de una réplica a través de Nginx (`200` si está sana). |
+| `GET /api/cpu?work=N` | Trabajo de CPU real, `N` entero entre `1` y `2000`; otros valores → `400`. |
+| `GET /nginx-health` | Salud del propio Nginx, sin consultar las APIs. |
+
+El detalle de endpoints, health checks, decisiones de balanceo y evidencias está en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
 
 ## 5. Estructura del repositorio
 
 ```text
 .
-├── docker-compose.yml          # Topología inicial de cuatro servicios
-├── service/                    # Microservicio y Dockerfile (pendientes)
-├── nginx/                      # nginx.conf (pendiente)
-├── tests/                      # Pruebas de carga (pendientes)
+├── docker-compose.yml          # Topología de cuatro servicios
+├── service/                    # Microservicio Node.js/Express
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── src/                    # app.js (endpoints) y server.js (arranque)
+│   └── test/                   # Pruebas unitarias (npm test)
+├── nginx/
+│   └── nginx.conf              # Balanceo round-robin y manejo de fallos
+├── tests/
+│   └── validacion_siccardi.sh  # Validación funcional (pruebas de carga: pendientes)
 ├── docs/
 │   ├── CONTRATOS_INTEGRACION.md
-│   └── ENTREGA_LOZANO.md
-├── evidencias/                 # Capturas y resultados seleccionados (pendientes)
+│   ├── ENTREGA_LOZANO.md
+│   └── ENTREGA_SICCARDI.md
+├── evidencias/                 # Registros de validación y capturas
 ├── .gitignore
 └── README.md
 ```
@@ -71,50 +89,50 @@ El trabajo se integra de forma secuencial: Lozano → Siccardi → Rivamar → r
 
 ## 8. Estado actual
 
-Disponible en esta etapa:
+Disponible (etapas de Lozano y Siccardi):
 
-- estructura base del repositorio;
-- topología Compose con `nginx`, `api1`, `api2` y `api3`;
-- imagen compartida, puerto, redes, variables, dependencias y probes declarados;
-- `.gitignore` permite versionar capturas en `evidencias/` y resultados seleccionados en `tests/results/`;
-- contratos de integración y traspaso técnico.
+- estructura base, topología Compose con `nginx`, `api1`, `api2` y `api3`, redes y probes;
+- microservicio REST con `/api/instancia`, `/health` y `/api/cpu`, y 13 pruebas unitarias;
+- `service/Dockerfile` con una única imagen para las tres réplicas;
+- `nginx/nginx.conf` con balanceo round-robin, timeouts, detección pasiva de fallos y reintento en otra réplica;
+- validación funcional de extremo a extremo (`tests/validacion_siccardi.sh`) con evidencias en `evidencias/`;
+- contratos de integración y documentos de traspaso.
 
-Todavía no están disponibles:
+Pendiente:
 
-- código del microservicio y endpoints;
-- `service/Dockerfile`;
-- `nginx/nginx.conf` y algoritmo de balanceo;
-- ejecución completa de `docker compose up -d`;
-- pruebas de carga, métricas, evidencias e informe final.
+- pruebas de carga, métricas (promedio, p95, p99) y análisis (Rivamar);
+- revisión final e informe (Lozano).
 
-En consecuencia, **no debe ejecutarse aún `docker compose up -d` esperando un despliegue funcional**. La configuración puede validarse con:
+## 9. Ejecución
 
 ```bash
-docker compose config
-```
-
-La validación del manifiesto comprueba la estructura declarada; todavía no demuestra conectividad HTTP ni que la imagen pueda construirse, porque Siccardi debe aportar `service/Dockerfile` y `nginx/nginx.conf`.
-
-## 9. Ejecución prevista al completar la integración
-
-Cuando Siccardi agregue los componentes pendientes, el flujo esperado será:
-
-```bash
-docker compose config
-docker compose build
-docker compose up -d
-docker compose ps
+docker compose config -q
+docker compose up -d --build
+docker compose ps                       # 4 contenedores (healthy)
 curl http://localhost:8080/health
 curl http://localhost:8080/api/instancia
+curl 'http://localhost:8080/api/cpu?work=500'
+bash tests/validacion_siccardi.sh       # validación funcional completa
+docker compose down
 ```
 
-Las instrucciones de pruebas de carga se incorporarán en la etapa de Rivamar. Hasta entonces, estos comandos describen el contrato de operación futuro y no una validación realizada de extremo a extremo.
+Para ver el reparto entre réplicas:
+
+```bash
+for i in $(seq 1 9); do curl -s http://localhost:8080/api/instancia | grep -o '"instancia":"[^"]*"'; done
+```
+
+Pruebas unitarias del servicio (requiere Node.js 20 o superior):
+
+```bash
+cd service && npm install && npm test
+```
+
+Las instrucciones de pruebas de carga se incorporarán en la etapa de Rivamar.
 
 ## 10. Próximos pasos
 
-1. Siccardi implementará el servicio, su Dockerfile y la configuración de Nginx sin cambiar los nombres, puertos ni rutas acordados.
-2. Siccardi verificará que peticiones consecutivas a `/api/instancia` muestren IDs reales de distintas réplicas y que los health checks estén saludables.
-3. Rivamar añadirá escenarios reproducibles de concurrencia moderada y saturación de CPU, con latencia promedio, p95 y p99.
-4. Lozano realizará la revisión, integración y documentación final sin fusionar automáticamente a `main`.
+1. Rivamar añadirá escenarios reproducibles de concurrencia moderada y saturación de CPU, con latencia promedio, p95 y p99. Las recomendaciones de valores de `work` están en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
+2. Lozano realizará la revisión, integración y documentación final sin fusionar automáticamente a `main`.
 
-El detalle operativo para continuar está en [docs/ENTREGA_LOZANO.md](docs/ENTREGA_LOZANO.md).
+Historial de traspasos: [docs/ENTREGA_LOZANO.md](docs/ENTREGA_LOZANO.md) y [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).

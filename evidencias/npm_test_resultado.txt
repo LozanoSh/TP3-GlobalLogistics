@@ -1,0 +1,28 @@
+$ cd service && npm test
+# Ejecutado: 2026-10-29T22:32:23Z — Node v24.19.0
+
+> tp3-globallogistics-api@1.0.0 test
+> node --test
+
+✔ GET /health responde 200 con estado ok (23.496125ms)
+✔ GET /health responde 503 durante el apagado (1.327458ms)
+✔ GET /api/instancia devuelve el hostname real (2.078583ms)
+✔ GET /api/cpu con work válido ejecuta trabajo (9.99925ms)
+✔ GET /api/cpu?work= responde 400 (0.903875ms)
+✔ GET /api/cpu?work=abc responde 400 (1.871291ms)
+✔ GET /api/cpu?work=0 responde 400 (0.706625ms)
+✔ GET /api/cpu?work=-3 responde 400 (2.036042ms)
+✔ GET /api/cpu?work=1.5 responde 400 (1.784042ms)
+✔ GET /api/cpu?work=1e3 responde 400 (1.735625ms)
+✔ GET /api/cpu?work=2001 responde 400 (1.572291ms)
+✔ GET /api/cpu sin work responde 400 (1.551375ms)
+✔ GET /api/cpu con work repetido responde 400 (1.595958ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135.581459
+# exit=0
