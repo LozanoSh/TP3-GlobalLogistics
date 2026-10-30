@@ -58,7 +58,13 @@ El detalle de endpoints, health checks, decisiones de balanceo y evidencias est�
 │   └── nginx.conf              # Balanceo round-robin y manejo de fallos
 ├── tests/
 │   ├── validacion_siccardi.sh  # Validación funcional anterior
-│   └── validacion_envios.js    # Validación funcional de Envios por Nginx
+│   ├── validacion_envios.js    # Validación funcional de Envios por Nginx
+│   ├── k6_common.js            # Payload y checks compartidos por los escenarios
+│   ├── k6_escenario_referencia.js
+│   ├── k6_escenario_moderado.js
+│   ├── k6_escenario_extremo.js
+│   ├── run_stress.ps1           # Ejecuta k6 y captura métricas, Docker y health
+│   └── run_extreme_ladder.ps1   # Escalones controlados de concurrencia
 ├── docs/
 │   ├── CONTRATOS_INTEGRACION.md
 │   ├── ADAPTACION_TP2_TP3.md
@@ -140,7 +146,24 @@ curl -i -X POST http://localhost:8080/envios/validar -H 'Content-Type: applicati
 
 La respuesta `200` contiene `valido`, `servicio`, `tipoEnvio`, `origen`, `destino`, `pesoKg`, `instancia` y `contenedor_id`; los errores de estructura o formato reciben `400` con `errores` por campo.
 
-Las instrucciones de pruebas de carga se incorporarán en la etapa de Rivamar.
+### Pruebas de carga (Rivamar)
+
+Requieren Docker Desktop iniciado, `k6` disponible en `PATH` y el entorno levantado. Los resultados se guardan en una carpeta fechada bajo `tests/results/`: resumen de k6 (promedio, mediana, p95, p99 y máximo), métricas crudas, códigos y checks, CPU/memoria cada segundo, health checks y metadatos de hardware/software/commit.
+
+```powershell
+docker compose up -d --build
+node tests/validacion_envios.js
+# Referencia liviana, 5 VU por 30 s
+./tests/run_stress.ps1 -Escenario referencia -Vus 5 -Duracion 30s
+# Concurrencia moderada: subida de 10 s, 100 VU sostenidos 45 s
+./tests/run_stress.ps1 -Escenario moderado -Vus 100 -Duracion 45s
+# Escalera de CPU: mismo work=100 en cada nivel, 30 s por nivel
+./tests/run_extreme_ladder.ps1 -Escalones 10,25,50,100,200 -Work 100 -Duracion 30s
+```
+
+El último nivel debe omitirse o ajustarse si CPU, memoria o health checks se degradan; no se debe interpretar `200 VU` como requisito de ejecución incondicional. Para cambiar el trabajo manteniendo la concurrencia, ejecutar otra escalera separada con `-Work 500` o superior, sin exceder el máximo documentado de 2000. El runner muestrea `docker stats` y `/health` y `/nginx-health` durante cada escalón. La API bloquea el event loop mientras ejecuta `/api/cpu`, por lo que los health checks pueden demorarse. `POST /envios/validar` es validación en memoria, no creación persistente de un envío.
+
+Estado de esta copia: `npm ci` y 28 pruebas unitarias pasaron, pero Docker Desktop no estaba iniciado y k6 no estaba instalado; por eso no hay resultados nuevos de carga en `tests/results/`. El informe y el traspaso distinguen datos verificados de mediciones pendientes.
 
 ## 10. Próximos pasos
 
