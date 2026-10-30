@@ -1,5 +1,8 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { Counter } from 'k6/metrics';
+
+const replicaRequests = new Counter('replica_requests');
 
 export const BASE = __ENV.BASE_URL || 'http://localhost:8080';
 export const WORK = Number(__ENV.WORK || 100);
@@ -29,6 +32,7 @@ export function validarEnvio() {
     'valido true': () => valido,
     'instancia reconocida': () => ['api1', 'api2', 'api3'].includes(instancia),
   });
+  replicaRequests.add(1, { instancia });
   return { res, valido, instancia };
 }
 
@@ -46,5 +50,6 @@ export function cargaCpu() {
     'work e iteraciones correctos': () => correcto,
     'instancia reconocida': () => ['api1', 'api2', 'api3'].includes(instancia),
   });
+  replicaRequests.add(1, { instancia });
   return { res, instancia };
 }

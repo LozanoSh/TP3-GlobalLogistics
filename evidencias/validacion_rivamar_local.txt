@@ -142,3 +142,7 @@ No se encontro ejecutable en la ruta estandar ni servicio com.docker.service
 $ tests/run_stress.ps1 con Docker apagado
 Se detuvo antes de k6: Docker Engine no responde; no se genero carpeta de ejecucion ni metricas
 k6 no se ejecuto contra el endpoint porque no existe el daemon/servicio accesible.
+
+$ intento run_stress.ps1 (1 VU, 1s)
+El runner verifico Docker y /nginx-health antes de k6. La conexion a localhost:8080 fue rechazada; k6 no se ejecuto.
+Registro: tests/results/20261030_183945_referencia_1vus_work100/blocked.json

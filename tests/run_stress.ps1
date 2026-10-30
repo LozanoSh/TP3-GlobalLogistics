@@ -16,8 +16,15 @@ $Stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $RunDir = Join-Path $Results "${Stamp}_${Escenario}_${Vus}vus_work${Work}"
 New-Item -ItemType Directory -Force -Path $RunDir | Out-Null
 $ExistingServer = docker info --format '{{.ServerVersion}}' 2>$null
-if (-not $ExistingServer) { throw 'Docker Engine no responde. Inicie Docker Desktop; no se genero una ejecucion k6.' }
-$HealthProbe = Invoke-WebRequest -Uri "$BaseUrl/nginx-health" -TimeoutSec 5
+if (-not $ExistingServer) {
+  @{ fecha = (Get-Date).ToString('o'); escenario=$Escenario; vus=$Vus; work=$Work; estado='bloqueado'; motivo='Docker Engine no responde'; commit=(& git -C $Root rev-parse HEAD).Trim() } | ConvertTo-Json | Set-Content (Join-Path $RunDir 'blocked.json') -Encoding utf8
+  throw "Docker Engine no responde. Se guardo el bloqueo en $RunDir; no se lanzo k6."
+}
+try { $HealthProbe = Invoke-WebRequest -Uri "$BaseUrl/nginx-health" -TimeoutSec 5 }
+catch {
+  @{ fecha = (Get-Date).ToString('o'); escenario=$Escenario; vus=$Vus; work=$Work; estado='bloqueado'; motivo='Nginx no responde en /nginx-health'; detalle=$_.Exception.Message; commit=(& git -C $Root rev-parse HEAD).Trim() } | ConvertTo-Json | Set-Content (Join-Path $RunDir 'blocked.json') -Encoding utf8
+  throw "Nginx no responde en $BaseUrl/nginx-health. Se guardo el bloqueo en $RunDir; no se lanzo k6."
+}
 if ($HealthProbe.StatusCode -ne 200) { throw "Nginx no esta healthy en $BaseUrl/nginx-health" }
 $Script = switch ($Escenario) {
   'referencia' { 'k6_escenario_referencia.js' }

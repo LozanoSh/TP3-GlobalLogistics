@@ -27,11 +27,11 @@ Se prepararon scripts k6 para referencia, 100 VU sobre la validación y escalone
 
 | Escenario | Estado / conclusión |
 |---|---|
-| Referencia 5 VU | Pendiente: daemon/k6 no disponibles durante la sesión. |
+| Referencia 5 VU | Pendiente: daemon Docker no disponible (k6 sí fue instalado y validado). |
 | Moderado 100 VU | Pendiente; sin latencias observadas. |
 | CPU, work=100, escalera | Pendiente; no hay CPU o estados health medidos bajo carga. |
 
-No hay datos fuente nuevos, por lo cual no se dibujan gráficos simulados. Tras la ejecución deberán agregarse las figuras de latencia por concurrencia, throughput, CPU por réplica y errores/timeouts, usando `tests/results/` como fuente.
+No hay datos fuente nuevos, por lo cual no se dibujan gráficos simulados. Tras la ejecución se deberán generar `evidencias/rendimiento_latencia.png`, `rendimiento_throughput.png`, `rendimiento_cpu_replicas.png`, `rendimiento_errores.png` y `rendimiento_distribucion_replicas.png` con `tests/graficar_resultados.py`, usando `tests/results/` como fuente.
 
 ## 4. Análisis y límites
 

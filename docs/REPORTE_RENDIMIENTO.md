@@ -30,7 +30,7 @@ Para mantener comparabilidad, el valor de `work` se mantiene constante dentro de
 | Docker CLI / Compose | Docker 29.7.2, Compose v5.4.0 |
 | `docker compose config -q` | Correcto; cuatro servicios declarados |
 | Docker Engine | No accesible: falta la pipe `dockerDesktopLinuxEngine` |
-| k6 | No estaba instalado al momento de preparar el reporte |
+| k6 | k6 v2.3.0 instalado; tres escenarios pasan `k6 inspect` |
 | Pruebas unitarias | 28/28 aprobadas tras `npm ci` |
 | Despliegue, balanceo y POST por Nginx | No ejecutados en esta sesión porque el daemon no responde |
 | Cargas k6 y `docker stats` | No ejecutadas; no hay métricas de carga nuevas |
@@ -47,7 +47,11 @@ Pendientes de ejecución real. Las tablas se completarán desde los archivos `k6
 | Moderado | 100 | n/a | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
 | CPU, escalones | 10–200 | 100 | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente | Pendiente |
 
-Gráficos requeridos (promedio/p95/p99 y concurrencia, throughput, CPU por réplica, errores/timeouts) se generarán una vez que haya datos fuente reales. No se crean gráficos vacíos o ilustrativos que puedan confundirse con evidencia.
+Los gráficos requeridos (promedio/p95/p99 y concurrencia, throughput, CPU por réplica, errores/timeouts y distribución por instancia) se generarán una vez que haya datos fuente reales. No se crean gráficos vacíos o ilustrativos que puedan confundirse con evidencia.
+
+Con las carpetas de corridas ya generadas, se pueden crear las figuras con `python tests/graficar_resultados.py --runs <carpeta-referencia> <carpeta-moderada> <carpeta-escalera-10-vu> ...`. El generador usa exclusivamente `k6_summary.json`, `k6_metrics.json`, `metadata.json` y `docker_stats.csv`; aborta si faltan fuentes requeridas.
+
+Los PNG producidos serán `evidencias/rendimiento_latencia.png`, `rendimiento_throughput.png`, `rendimiento_cpu_replicas.png`, `rendimiento_errores.png` y `rendimiento_distribucion_replicas.png`.
 
 ## Criterio para identificar degradación
 
@@ -68,4 +72,5 @@ Todavía no hay latencia máxima de carga observada, por lo que no se puede afir
 - Scripts: [`tests/k6_escenario_referencia.js`](../tests/k6_escenario_referencia.js), [`tests/k6_escenario_moderado.js`](../tests/k6_escenario_moderado.js), [`tests/k6_escenario_extremo.js`](../tests/k6_escenario_extremo.js).
 - Recolección: [`tests/run_stress.ps1`](../tests/run_stress.ps1), [`tests/run_extreme_ladder.ps1`](../tests/run_extreme_ladder.ps1).
 - Pruebas unitarias y estado Docker de esta sesión: [`evidencias/validacion_rivamar_local.txt`](../evidencias/validacion_rivamar_local.txt).
+- Intento de runner bloqueado antes de la carga: `tests/results/20261030_183945_referencia_1vus_work100/blocked.json` (Nginx no disponible; no contiene métricas).
 - Resultados de carga: `tests/results/` (sin ejecuciones nuevas en esta sesión).

@@ -6,11 +6,14 @@
 - Payload de Gestión de Envíos compartido, checks de HTTP 200, `valido: true` e instancia identificada.
 - Runner PowerShell que conserva resumen y métricas k6, metadatos, muestreo de CPU/memoria por contenedor y probes `/health` y `/nginx-health`.
 - Runner de escalones con `work` constante para permitir comparar concurrencia.
+- Generador Python de cuatro gráficos que consume carpetas de corridas reales y rechaza fuentes ausentes.
 - README, reporte de rendimiento y borrador integral del TP3.
 
 ## Archivos
 
 Scripts: `tests/k6_common.js`, `tests/k6_escenario_referencia.js`, `tests/k6_escenario_moderado.js`, `tests/k6_escenario_extremo.js`, `tests/run_stress.ps1`, `tests/run_extreme_ladder.ps1`.
+
+Gráficos: `tests/graficar_resultados.py`; requiere `python -m pip install -r tests/requirements-graficos.txt` y rutas reales de `tests/results/`.
 
 Documentos: `docs/REPORTE_RENDIMIENTO.md`, `docs/INFORME_TP3_BORRADOR.md`, este traspaso y README actualizado.
 
@@ -33,9 +36,10 @@ Si una escalera muestra degradación fuerte, detener niveles posteriores o exclu
 - `npm ci`: completado, 0 vulnerabilidades reportadas por npm.
 - `npm test`: 28/28 pruebas aprobadas.
 - `docker compose config -q`: correcto; topología de cuatro servicios.
+- Intento del runner de referencia: detenido antes de k6 por conexión rechazada en `http://localhost:8080/nginx-health`; `blocked.json` conservado en `tests/results/`.
 - `docker version` / `docker info`: el daemon no estaba disponible; error de pipe `dockerDesktopLinuxEngine`.
 - `docker compose up`, `docker compose ps`, `node tests/validacion_envios.js` por Nginx y cargas k6: no ejecutados por ese bloqueo.
-- k6 no estaba instalado al iniciar el trabajo.
+- k6 2.3.0 fue instalado durante el trabajo; los tres escenarios pasan `k6 inspect`.
 
 La salida literal de las verificaciones de esta sesión está en `evidencias/validacion_rivamar_local.txt`. No se reutilizaron capturas viejas como resultados de esta API y no se generaron métricas sintéticas.
 
