@@ -5,46 +5,64 @@
 **Universidad Champagnat · Arquitectura de Sistemas · 2026**  
 **Repositorio:** https://github.com/LozanoSh/TP3-GlobalLogistics  
 **Equipo:** Lozano, Siccardi y Rivamar  
-**Estado:** borrador técnico; falta ejecutar pruebas distribuidas y completar resultados.
+**Estado:** borrador técnico con mediciones reales; Lozano debe completar formato y PDF final.
 
 ## Resumen
 
-El TP3 despliega un prototipo de Gestión de Envíos formado por una entrada Nginx y tres réplicas Node.js/Express definidas en Docker Compose. La API valida solicitudes de envío internacional y ofrece endpoints técnicos para observar identidad, salud y consumo de CPU. La validación de `/envios/validar` no registra un envío.
+El TP3 despliega un prototipo de Gestión de Envíos con un balanceador Nginx y tres réplicas Node.js/Express bajo Docker Compose. `POST /envios/validar` valida un envío y devuelve un resumen; no crea ni persiste el envío. Se verifican la topología, el reparto por réplica, la salud y el rendimiento bajo concurrencia y cálculo intensivo de CPU.
 
 ## 1. Infraestructura como código
 
-Compose define cuatro servicios principales: `nginx`, `api1`, `api2` y `api3`. Nginx publica el puerto 8080; las APIs permanecen en la red interna. La topología, health checks y configuración se describen en `docker-compose.yml` y `nginx/nginx.conf`. La validación de configuración pasó (`docker compose config -q`). En la sesión de Rivamar el daemon Docker no estuvo disponible, así que no se pudo verificar un despliegue actual de los cuatro contenedores.
+Compose define exactamente cuatro servicios: `nginx`, `api1`, `api2` y `api3`. Nginx publica `localhost:8080`; las tres APIs permanecen en la red interna. La configuración pasó `docker compose config -q`. En la ejecución observada por el usuario, `docker compose ps` mostró los cuatro contenedores healthy y el único puerto publicado fue el 8080 de Nginx. La evidencia funcional está en `evidencias/validacion_rivamar_local.txt` y las capturas nuevas conservadas por el equipo.
 
 ## 2. API, balanceo y salud
 
-`POST /envios/validar` valida el contrato y devuelve la réplica que atendió. `GET /api/instancia` expone hostname e ID de contenedor; `GET /health` evalúa la API; `/nginx-health` evalúa Nginx; `/api/cpu?work=N` permite carga computacional. Nginx usa round-robin y detección pasiva. El script `tests/validacion_envios.js` comprueba el POST, errores de validación, endpoints técnicos y distribución por las tres réplicas cuando el entorno está disponible.
+`POST /envios/validar` acepta el contrato en memoria y responde `200` para datos válidos, `400` para entradas inválidas. `GET /api/instancia` identifica la réplica y el contenedor; `GET /health` y `/nginx-health` informan salud; `/api/cpu?work=N` genera cálculo real. Nginx balancea round-robin y aplica detección pasiva.
 
-`npm ci` y `npm test` se ejecutaron en esta sesión: 28 pruebas locales aprobaron. La prueba de integración por Nginx no pudo ejecutarse porque Docker Desktop no respondió. Las capturas históricas existentes pertenecen a una etapa anterior; no se presentan como evidencia de esta integración.
+El usuario ejecutó `node tests/validacion_envios.js`: nueve solicitudes válidas recorrieron api1, api2 y api3; cinco casos inválidos dieron 400; `/health`, `/api/instancia` y `/api/cpu?work=1` respondieron 200. Resultado: `VALIDACION ENVIOS OK`. También se aprobaron 28/28 pruebas unitarias con `npm test`.
 
-## 3. Pruebas de estrés
+## 3. Pruebas de rendimiento
 
-Se prepararon scripts k6 para referencia, 100 VU sobre la validación y escalones de CPU. Cada ejecución debe conservar solicitudes totales, throughput, promedio, mediana, p95, p99, máximo, errores, réplica y checks. El runner guarda métricas crudas y muestrea CPU/memoria y salud. Los comandos exactos están en README y `docs/ENTREGA_RIVAMAR.md`.
+k6 2.3.0 midió la carga local a través de Nginx. La máquina fue una Lenovo modelo 82KT con 16 procesadores lógicos y 10.592.444.416 bytes de RAM física; Docker Engine 29.7.2 y Compose 5.4.0.
 
-| Escenario | Estado / conclusión |
-|---|---|
-| Referencia 5 VU | Pendiente: daemon Docker no disponible (k6 sí fue instalado y validado). |
-| Moderado 100 VU | Pendiente; sin latencias observadas. |
-| CPU, work=100, escalera | Pendiente; no hay CPU o estados health medidos bajo carga. |
+| Escenario | Endpoint | VU | Requests | req/s | Promedio | p95 | p99 | Máxima | Errores k6 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Referencia | `POST /envios/validar` | 5 | 1.425 | 47,34 | 4,45 ms | 6,40 ms | 10,01 ms | 33,36 ms | 0 % |
+| Moderado | `POST /envios/validar` | 100 | 51.807 | 796,02 | 5,64 ms | 13,64 ms | 32,98 ms | 131,09 ms | 0 % |
+| CPU | `GET /api/cpu?work=100` | 1 | 174 | 5,79 | 171,98 ms | 255 ms | 273,42 ms | 288,42 ms | 0 % |
+| CPU | `GET /api/cpu?work=100` | 10 | 438 | 13,78 | 704,30 ms | 2.792,49 ms | 3.363,93 ms | 6.470,15 ms | 0 % |
+| CPU | `GET /api/cpu?work=100` | 25 | 553 | 16,51 | 1.421,45 ms | 6.499,47 ms | 10.084,81 ms | 11.621,87 ms | 0 % |
 
-No hay datos fuente nuevos, por lo cual no se dibujan gráficos simulados. Tras la ejecución se deberán generar `evidencias/rendimiento_latencia.png`, `rendimiento_throughput.png`, `rendimiento_cpu_replicas.png`, `rendimiento_errores.png` y `rendimiento_distribucion_replicas.png` con `tests/graficar_resultados.py`, usando `tests/results/` como fuente.
+Las series de POST y CPU no se comparan como si fueran una misma operación. Para la serie CPU, la degradación clara comienza a 10 VU: p95 es 10,95 veces el de 1 VU y p99 12,30 veces mayor. A 25 VU, el throughput aumenta a 16,51 req/s, pero p95 es 6,50 s, p99 10,08 s y la máxima 11,62 s. Las cargas k6 tuvieron cero errores HTTP.
 
-## 4. Análisis y límites
+CPU por réplica se aproximó a 100–104 % de pico en los niveles de 10 y 25 VU. A 25 VU, 2 de 15 probes `/health` agotaron el timeout de 4 s; la demora máxima fue 4.034 ms. Luego los cuatro servicios volvieron a healthy. La prueba se detuvo en 25 VU ante esta evidencia; no se extrapolan niveles superiores.
 
-No se puede afirmar un punto de degradación ni cumplimiento de una latencia máxima sin medición real. El reporte adopta como criterio inicial de degradación una duplicación de p95 frente a referencia junto con duplicación de p99, errores superiores a 1% o throughput que deje de crecer.
+### Figuras generadas desde los resultados
 
-El cálculo de CPU es síncrono y puede bloquear el event loop, incluidas respuestas de salud. Nginx es un único punto de entrada; las tres réplicas son fijas y no constituyen autoescalado. El objetivo de diseño del TP2 (p95 ≤ 250 ms, p99 ≤ 500 ms y máximo ≤ 1000 ms) corresponde al alta transaccional `POST /envios/crear`. Medir el validador no prueba ese flujo, que requeriría autenticación, idempotencia, persistencia, transacción y outbox no implementadas aquí.
+![Latencia por endpoint](../evidencias/rendimiento_latencia.png)
 
-## Evidencias y reproducibilidad
+![Throughput por endpoint](../evidencias/rendimiento_throughput.png)
 
-- API y contrato: `docs/ADAPTACION_TP2_TP3.md`.
-- Resultados locales verificables: `evidencias/validacion_rivamar_local.txt`.
-- Scripts de estrés: `tests/k6_*.js` y `tests/run_*.ps1`.
-- Datos futuros: `tests/results/`.
-- Informe detallado: `docs/REPORTE_RENDIMIENTO.md`.
+![CPU por réplica](../evidencias/rendimiento_cpu_replicas.png)
 
-Levantar con `docker compose up -d --build`, validar con `node tests/validacion_envios.js` y ejecutar los comandos k6 del README. Este borrador no reemplaza las mediciones pendientes ni el PDF final.
+![Errores y timeouts](../evidencias/rendimiento_errores.png)
+
+![Distribución por réplica](../evidencias/rendimiento_distribucion_replicas.png)
+
+## 4. Análisis crítico y límites
+
+El endpoint `/api/cpu` hace el cálculo síncronamente en el event loop principal de Node.js. Bajo carga, otras solicitudes asignadas a esa réplica esperan, incluidos los health checks. Nginx continuó entregando HTTP 200 para las solicitudes CPU medidas, mientras los probes de salud se demoraban y finalmente agotaban su timeout. Tres réplicas fijas distribuyen trabajo, pero no crean recursos nuevos ni mantienen latencia constante si todas compiten por CPU. No existe autoescalado. Nginx es un único punto de entrada.
+
+Como mejoras de producción se evaluarían worker threads o una cola para tareas CPU, límites y reservas de CPU/memoria, health checks que no compartan el event loop bloqueado, balanceador redundante, métricas/alertas y escalado automatizado. El alta completa del TP2 exige persistencia transaccional y controles que no están implementados aquí.
+
+La referencia temporal TP2 (p95 ≤ 250 ms, p99 ≤ 500 ms, máximo ≤ 1.000 ms) corresponde a `POST /envios/crear`. La máxima del moderado fue 131,09 ms, mientras que `/api/cpu` superó 1.000 ms desde 10 VU. Esos resultados describen validación en memoria y carga sintética: no demuestran el SLA de creación persistente.
+
+## Evidencias y reproducción
+
+- Validación funcional y unitarias: salidas en `evidencias/` y capturas de la ejecución actual.
+- Resultados y datos fuente: carpetas `tests/results/20261030_195150_*`, `20261030_201228_*`, `20261030_202522_*`, `20261030_201849_*` y `20261030_202917_*`.
+- Resumen tabular reproducible: `tests/results/resumen_escenarios.csv`; puntos de k6 conservados comprimidos en `k6_metrics.json.gz`.
+- Reporte con tablas ampliadas y metodología: `docs/REPORTE_RENDIMIENTO.md`.
+- Comandos reproducibles: `README.md` y `docs/ENTREGA_RIVAMAR.md`.
+
+El borrador no atribuye autenticación, persistencia, idempotencia, outbox ni autoescalado al prototipo.

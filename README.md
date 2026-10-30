@@ -4,7 +4,7 @@
 
 Trabajo Práctico N.º 3 de Arquitectura de Sistemas de la Universidad Champagnat. El objetivo es desplegar con Infraestructura como Código un entorno cloud-native local que permita observar balanceo de carga, disponibilidad de réplicas y comportamiento de latencia bajo carga.
 
-La consigna final requiere exactamente un balanceador, tres réplicas del microservicio, health checks y dos escenarios de estrés. El repositorio tiene completas la infraestructura inicial de Lozano y la etapa de Siccardi (API, imagen, Nginx y balanceo). Falta la etapa de pruebas de estrés de Rivamar.
+La consigna final requiere exactamente un balanceador, tres réplicas del microservicio, health checks y dos escenarios de estrés. La etapa técnica de pruebas de Rivamar incluye una referencia, 100 VU sobre la validación y CPU a 1, 10 y 25 VU; los resultados y límites están en `docs/REPORTE_RENDIMIENTO.md`.
 
 ## 2. Contexto de GlobalLogistics
 
@@ -110,8 +110,7 @@ Disponible (etapas de Lozano y Siccardi):
 
 Pendiente:
 
-- pruebas de carga, métricas (promedio, p95, p99) y análisis (Rivamar);
-- revisión final e informe (Lozano).
+- revisión final, PDF y entrega de la institución (Lozano).
 
 ## 9. Ejecución
 
@@ -168,11 +167,11 @@ python -m pip install -r tests/requirements-graficos.txt
 
 El último nivel debe omitirse o ajustarse si CPU, memoria o health checks se degradan; no se debe interpretar `200 VU` como requisito de ejecución incondicional. Para cambiar el trabajo manteniendo la concurrencia, ejecutar otra escalera separada con `-Work 500` o superior, sin exceder el máximo documentado de 2000. El runner muestrea `docker stats` y `/health` y `/nginx-health` durante cada escalón. La API bloquea el event loop mientras ejecuta `/api/cpu`, por lo que los health checks pueden demorarse. `POST /envios/validar` es validación en memoria, no creación persistente de un envío.
 
-Estado de esta copia: `npm ci` y 28 pruebas unitarias pasaron, k6 2.3.0 fue instalado y los tres escenarios pasan `k6 inspect`. Docker Desktop/Engine no está disponible, por lo que no hay resultados nuevos de carga en `tests/results/`. El informe y el traspaso distinguen datos verificados de mediciones pendientes.
+Estado de las pruebas: `npm ci` y 28 pruebas unitarias pasaron; el usuario verificó cuatro contenedores healthy y `VALIDACION ENVIOS OK`. k6 2.3.0 ejecutó la referencia, el escenario de 100 VU y los escalones CPU de 1, 10 y 25 VU. Los resultados, CSV y metadatos están en `tests/results/`; los gráficos y análisis están en `docs/REPORTE_RENDIMIENTO.md`. No se ejecutó 50 VU: a 25 VU hubo latencias de hasta 11,62 s y dos fallos/timeout de `/health`.
 
 ## 10. Próximos pasos
 
-1. Rivamar añadirá escenarios reproducibles de concurrencia moderada con `POST /envios/validar` y saturación de CPU con `GET /api/cpu?work=N`, con latencia promedio, p95 y p99. Las recomendaciones de valores de `work` están en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
-2. Lozano realizará la revisión, integración y documentación final sin fusionar automáticamente a `main`.
+1. Lozano revisará las métricas, capturas y borrador del informe, y completará el PDF final.
+2. La integración a `main` queda sujeta a la revisión de Lozano.
 
 Historial de traspasos: [docs/ENTREGA_LOZANO.md](docs/ENTREGA_LOZANO.md) y [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
