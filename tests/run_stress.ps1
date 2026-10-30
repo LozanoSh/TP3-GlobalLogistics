@@ -59,7 +59,7 @@ $HealthJob = Start-Job -ArgumentList $HealthPath, $BaseUrl -ScriptBlock {
     $ts = (Get-Date).ToString('o')
     foreach ($route in @('/health', '/nginx-health')) {
       $sw = [Diagnostics.Stopwatch]::StartNew()
-      try { $r = Invoke-WebRequest -Uri ($Url + $route) -TimeoutSec 4; $status = [int]$r.StatusCode }
+      try { $r = Invoke-WebRequest -UseBasicParsing -Uri ($Url + $route) -TimeoutSec 4; $status = [int]$r.StatusCode }
       catch { $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 } }
       $sw.Stop()
       "$ts,$route,$status,$([math]::Round($sw.Elapsed.TotalMilliseconds,2))" | Add-Content $Path
@@ -76,7 +76,7 @@ $InstancesJob = Start-Job -ArgumentList $InstancesPath, $BaseUrl -ScriptBlock {
     # send extra /api/cpu requests from the collector during the load test.
     $route = '/api/instancia'
     try {
-      $r = Invoke-WebRequest -Uri ($Url + $route) -TimeoutSec 40
+      $r = Invoke-WebRequest -UseBasicParsing -Uri ($Url + $route) -TimeoutSec 40
       $body = $r.Content | ConvertFrom-Json
       $instance = $body.instancia
       $valid = $instance -in @('api1','api2','api3')
