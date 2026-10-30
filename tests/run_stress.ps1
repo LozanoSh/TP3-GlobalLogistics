@@ -67,18 +67,19 @@ $HealthJob = Start-Job -ArgumentList $HealthPath, $BaseUrl -ScriptBlock {
     Start-Sleep -Seconds 1
   }
 }
-$InstancesJob = Start-Job -ArgumentList $InstancesPath, $BaseUrl, $Escenario -ScriptBlock {
-  param($Path, $Url, $Mode)
+$InstancesJob = Start-Job -ArgumentList $InstancesPath, $BaseUrl -ScriptBlock {
+  param($Path, $Url)
   'timestamp,endpoint,http_status,instance,valid' | Set-Content $Path
   while ($true) {
     $ts = (Get-Date).ToString('o')
-    if ($Mode -eq 'extremo') { $route = '/api/cpu?work=' + $using:Work; $method = 'GET' }
-    else { $route = '/api/instancia'; $method = 'GET' }
+    # Always observe replica identity through a lightweight endpoint. Never
+    # send extra /api/cpu requests from the collector during the load test.
+    $route = '/api/instancia'
     try {
       $r = Invoke-WebRequest -Uri ($Url + $route) -TimeoutSec 40
       $body = $r.Content | ConvertFrom-Json
       $instance = $body.instancia
-      $valid = if ($Mode -eq 'extremo') { $body.work -eq $using:Work } else { $instance -in @('api1','api2','api3') }
+      $valid = $instance -in @('api1','api2','api3')
       "$ts,$route,$([int]$r.StatusCode),$instance,$valid" | Add-Content $Path
     } catch { "$ts,$route,0,unknown,false" | Add-Content $Path }
     Start-Sleep -Milliseconds 500
