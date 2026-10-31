@@ -1,0 +1,16 @@
+﻿{
+    "vus":  5,
+    "equipo":  {
+                   "Manufacturer":  "LENOVO",
+                   "Model":  "82KT",
+                   "NumberOfLogicalProcessors":  16,
+                   "TotalPhysicalMemory":  10592444416
+               },
+    "docker_version":  "29.7.2",
+    "duracion":  "30s",
+    "work":  null,
+    "base_url":  "http://localhost:8080",
+    "commit":  "4f90a164ab572f9b102314c56631203114da5f06",
+    "fecha_inicio":  "2026-10-30T19:52:12.6982171-03:00",
+    "escenario":  "referencia"
+}

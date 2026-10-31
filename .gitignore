@@ -30,6 +30,9 @@ build/
 .nyc_output/
 
 # Las capturas y los resultados seleccionados para la entrega se pueden versionar
+# Los puntos k6 en JSON sin comprimir pueden superar el límite de GitHub;
+# versionar la copia k6_metrics.json.gz junto a los resúmenes y CSV.
+tests/results/**/k6_metrics.json
 
 # IDE y sistema operativo
 .idea/

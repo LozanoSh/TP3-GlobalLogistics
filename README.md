@@ -1,138 +1,51 @@
-# TP3 - GlobalLogistics
+# TP3 GlobalLogistics - Gestión de Envíos
 
-## 1. Objetivo académico
+Trabajo Práctico 3 de Arquitectura de Sistemas (Universidad Champagnat). Despliega un prototipo REST de Gestión de Envíos: `POST /envios/validar` comprueba una solicitud en memoria; no crea ni persiste envíos.
 
-Trabajo Práctico N.º 3 de Arquitectura de Sistemas de la Universidad Champagnat. El objetivo es desplegar con Infraestructura como Código un entorno cloud-native local que permita observar balanceo de carga, disponibilidad de réplicas y comportamiento de latencia bajo carga.
+## Arquitectura y requisitos
 
-La consigna final requiere exactamente un balanceador, tres réplicas del microservicio, health checks y dos escenarios de estrés. El repositorio tiene completas la infraestructura inicial de Lozano y la etapa de Siccardi (API, imagen, Nginx y balanceo). Falta la etapa de pruebas de estrés de Rivamar.
+Docker Compose levanta un Nginx (`localhost:8080`) que reparte solicitudes entre tres réplicas Node.js 22/Express (`api1`, `api2`, `api3`) construidas desde la misma imagen. Las APIs sólo están en la red interna. Se requieren Docker Engine con Compose v2 y, para las comprobaciones locales, Node.js 22 o superior. Las pruebas de carga requieren k6 y PowerShell; la regeneración de gráficos requiere Python y `tests/requirements-graficos.txt`.
 
-## 2. Contexto de GlobalLogistics
+## Levantar y comprobar
 
-GlobalLogistics S.A. necesita comprobar que una arquitectura distribuida puede escalar horizontalmente y conservar tiempos de respuesta estables frente a picos comerciales. El entorno de este TP simplifica ese problema a un microservicio REST replicado detrás de Nginx, con puntos de observación controlados para identidad, salud y consumo de CPU.
+Desde la raíz del repositorio:
 
-## 3. Relación con el TP2
-
-El TP2 propuso una arquitectura distribuida con una entrada unificada, servicios de dominio sin estado, bases de datos independientes y eventos para los procesos asíncronos. De esa propuesta se reutilizan en este TP los principios de entrada única y escalado horizontal.
-
-El contrato `POST /envios/crear` del TP2 no forma parte de esta primera implementación. El TP3 incorpora endpoints técnicos específicos para demostrar balanceo y medir rendimiento; sus contratos están en [docs/CONTRATOS_INTEGRACION.md](docs/CONTRATOS_INTEGRACION.md).
-
-## 4. Arquitectura
-
-```text
-Cliente -> localhost:8080 -> nginx:80
-                                |
-                      +---------+---------+
-                      |         |         |
-                   api1:3000 api2:3000 api3:3000
-```
-
-- `nginx` (1.27, Open Source) es el único punto publicado en el host, mediante `8080:80`, y reparte las solicitudes en round-robin entre las tres réplicas.
-- `api1`, `api2` y `api3` usan la misma imagen `tp3-globallogistics-api:local` (Node.js 22 + Express), construida desde `service/Dockerfile`, y escuchan en el puerto interno `3000`.
-- `nginx` se conecta a `frontend` (bridge no interna) para recibir solicitudes publicadas en `localhost:8080` y a `backend` (bridge interna) para comunicarse con las APIs. Las tres APIs están sólo en `backend`.
-- Compose comprueba `GET /health` en cada API antes de habilitar la dependencia de Nginx. Nginx detecta de forma pasiva las réplicas que fallan (`max_fails=2`, `fail_timeout=10s`) y reintenta la solicitud en otra.
-- Cada réplica devuelve su hostname y el ID real de su contenedor; `INSTANCE_ID` queda como apoyo de diagnóstico.
-
-Endpoints públicos en `http://localhost:8080`:
-
-| Ruta | Uso |
-|---|---|
-| `GET /api/instancia` | Identidad de la réplica que respondió. |
-| `GET /health` | Salud de una réplica a través de Nginx (`200` si está sana). |
-| `GET /api/cpu?work=N` | Trabajo de CPU real, `N` entero entre `1` y `2000`; otros valores → `400`. |
-| `GET /nginx-health` | Salud del propio Nginx, sin consultar las APIs. |
-
-El detalle de endpoints, health checks, decisiones de balanceo y evidencias está en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
-
-## 5. Estructura del repositorio
-
-```text
-.
-├── docker-compose.yml          # Topología de cuatro servicios
-├── service/                    # Microservicio Node.js/Express
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── src/                    # app.js (endpoints) y server.js (arranque)
-│   └── test/                   # Pruebas unitarias (npm test)
-├── nginx/
-│   └── nginx.conf              # Balanceo round-robin y manejo de fallos
-├── tests/
-│   └── validacion_siccardi.sh  # Validación funcional (pruebas de carga: pendientes)
-├── docs/
-│   ├── CONTRATOS_INTEGRACION.md
-│   ├── ENTREGA_LOZANO.md
-│   └── ENTREGA_SICCARDI.md
-├── evidencias/                 # Registros de validación y capturas
-├── .gitignore
-└── README.md
-```
-
-Los directorios todavía vacíos se conservan con archivos `.gitkeep`.
-
-## 6. Distribución de responsabilidades
-
-| Integrante | Participación | Responsabilidad |
-|---|---:|---|
-| Lozano | 25 % | Estructura, Compose inicial, contratos y documentación de traspaso; revisión final. |
-| Siccardi | 40 % | API REST, Dockerfile, Nginx, balanceo y health checks operativos. |
-| Rivamar | 35 % | Pruebas de estrés, saturación de CPU, métricas y análisis de latencia. |
-
-El trabajo se integra de forma secuencial: Lozano → Siccardi → Rivamar → revisión final de Lozano.
-
-## 7. Requisitos para el entorno final
-
-- Git.
-- Docker Engine.
-- Docker Compose v2 (`docker compose`).
-- Puertos `8080` del host y `3000` dentro de las APIs disponibles para el uso indicado.
-- Una herramienta HTTP como `curl` para las comprobaciones manuales.
-- La herramienta de carga que seleccione Rivamar, una vez documentada.
-
-## 8. Estado actual
-
-Disponible (etapas de Lozano y Siccardi):
-
-- estructura base, topología Compose con `nginx`, `api1`, `api2` y `api3`, redes y probes;
-- microservicio REST con `/api/instancia`, `/health` y `/api/cpu`, y 13 pruebas unitarias;
-- `service/Dockerfile` con una única imagen para las tres réplicas;
-- `nginx/nginx.conf` con balanceo round-robin, timeouts, detección pasiva de fallos y reintento en otra réplica;
-- validación funcional de extremo a extremo (`tests/validacion_siccardi.sh`) con evidencias en `evidencias/`;
-- contratos de integración y documentos de traspaso.
-
-Pendiente:
-
-- pruebas de carga, métricas (promedio, p95, p99) y análisis (Rivamar);
-- revisión final e informe (Lozano).
-
-## 9. Ejecución
-
-```bash
+```powershell
 docker compose config -q
 docker compose up -d --build
-docker compose ps                       # 4 contenedores (healthy)
-curl http://localhost:8080/health
-curl http://localhost:8080/api/instancia
-curl 'http://localhost:8080/api/cpu?work=500'
-bash tests/validacion_siccardi.sh       # validación funcional completa
-docker compose down
+docker compose ps
+node tests/validacion_envios.js
 ```
 
-Para ver el reparto entre réplicas:
+`docker compose ps` debe mostrar cuatro contenedores `healthy`. La validación comprueba `POST /envios/validar`, `/health`, `/api/instancia`, `/api/cpu` y respuestas de las tres réplicas. Para observar el reparto y la salud manualmente:
 
-```bash
-for i in $(seq 1 9); do curl -s http://localhost:8080/api/instancia | grep -o '"instancia":"[^"]*"'; done
+```powershell
+1..9 | ForEach-Object { (Invoke-RestMethod http://localhost:8080/api/instancia).instancia }
+Invoke-RestMethod http://localhost:8080/health
+Invoke-RestMethod http://localhost:8080/nginx-health
+docker compose ps
 ```
 
-Pruebas unitarias del servicio (requiere Node.js 20 o superior):
+Pruebas unitarias del servicio:
 
-```bash
-cd service && npm install && npm test
+```powershell
+cd service
+npm ci
+npm test
+cd ..
 ```
 
-Las instrucciones de pruebas de carga se incorporarán en la etapa de Rivamar.
+## Reproducir las cargas
 
-## 10. Próximos pasos
+Con los cuatro contenedores saludables, ejecutar desde la raíz:
 
-1. Rivamar añadirá escenarios reproducibles de concurrencia moderada y saturación de CPU, con latencia promedio, p95 y p99. Las recomendaciones de valores de `work` están en [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
-2. Lozano realizará la revisión, integración y documentación final sin fusionar automáticamente a `main`.
+```powershell
+./tests/run_stress.ps1 -Escenario moderado -Vus 100 -Duracion 45s
+./tests/run_stress.ps1 -Escenario extremo -Vus 1 -Work 100 -Duracion 30s
+./tests/run_stress.ps1 -Escenario extremo -Vus 10 -Work 100 -Duracion 30s
+./tests/run_stress.ps1 -Escenario extremo -Vus 25 -Work 100 -Duracion 30s
+```
 
-Historial de traspasos: [docs/ENTREGA_LOZANO.md](docs/ENTREGA_LOZANO.md) y [docs/ENTREGA_SICCARDI.md](docs/ENTREGA_SICCARDI.md).
+El escenario extremo compara escalones de CPU con el mismo trabajo; la corrida registrada se detuvo en 25 VU por degradación de latencia y timeouts de salud. Los resultados nuevos se guardan en `tests/results/`. Los datos originales y resúmenes utilizados para el informe están allí; gráficos y capturas están en `evidencias/`. El informe final está en `docs/INFORME_TP3_FINAL.pdf` y el detalle numérico en `docs/REPORTE_RENDIMIENTO.md`.
+
+Integrantes: Lozano (infraestructura e integración), Siccardi (API, Nginx y salud) y Rivamar (pruebas de rendimiento y análisis).

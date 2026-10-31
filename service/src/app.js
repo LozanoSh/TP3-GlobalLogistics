@@ -3,14 +3,40 @@
 const express = require('express');
 const os = require('os');
 const fs = require('fs');
+const { validarEnvio } = require('./validarEnvio');
 
-const SERVICIO = 'tp3-globallogistics-api';
+const SERVICIO = 'Gestion de Envios';
 const VERSION = '1.0.0';
 
 // Cada unidad de "work" equivale a esta cantidad de iteraciones del bucle de CPU.
 const ITERACIONES_POR_UNIDAD = 100000;
 const WORK_MIN = 1;
 const WORK_MAX = Number.parseInt(process.env.CPU_WORK_MAX ?? '2000', 10);
+
+// Conserva la precisión del monto int64 al parsear JSON (Node 22 expone
+// el literal original en el reviver). El monto sólo se usa para validación.
+function revivirMontoMinor(clave, valor, contexto) {
+  if (clave !== 'montoMinor' || typeof valor !== 'number') return valor;
+  const literal = contexto?.source;
+  const partes = /^(-?)(0|[1-9]\d*)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(literal ?? '');
+  if (!partes) return Number.isSafeInteger(valor) ? BigInt(valor) : NaN;
+
+  const [, signo, entero, fraccion = '', exponente = '0'] = partes;
+  let digitos = (entero + fraccion).replace(/^0+/, '') || '0';
+  if (digitos === '0') return 0n;
+  const desplazamiento = Number(exponente) - fraccion.length;
+  if (!Number.isSafeInteger(desplazamiento)) return NaN;
+
+  if (desplazamiento >= 0) {
+    if (digitos.length + desplazamiento > 19) return NaN;
+    digitos += '0'.repeat(desplazamiento);
+  } else {
+    const quitar = -desplazamiento;
+    if (quitar > digitos.length || !/^0*$/.test(digitos.slice(-quitar))) return NaN;
+    digitos = digitos.slice(0, -quitar) || '0';
+  }
+  return BigInt(`${signo}${digitos}`);
+}
 
 // Obtiene el ID real del contenedor Docker leyendo los montajes del proceso.
 // Con `hostname:` fijado en Compose, /etc/hostname ya no contiene el ID,
@@ -114,6 +140,35 @@ function crearApp(estado = { cerrando: false }) {
       resultado,
       duracion_ms: Math.round(duracionMs * 100) / 100,
     });
+  });
+
+  app.post('/envios/validar', express.json({ strict: true, reviver: revivirMontoMinor }), (req, res) => {
+    const errores = validarEnvio(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ valido: false, errores, instancia: identidad.instancia });
+    }
+
+    res.json({
+      valido: true,
+      servicio: SERVICIO,
+      tipoEnvio: req.body.servicio,
+      origen: req.body.remitente.pais,
+      destino: req.body.destinatario.pais,
+      pesoKg: req.body.paquete.pesoKg,
+      instancia: identidad.instancia,
+      contenedor_id: identidad.contenedor_id,
+    });
+  });
+
+  app.use((err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') {
+      return res.status(400).json({
+        valido: false,
+        errores: [{ campo: 'solicitud', detalle: 'JSON inválido' }],
+        instancia: identidad.instancia,
+      });
+    }
+    next(err);
   });
 
   app.use((req, res) => {

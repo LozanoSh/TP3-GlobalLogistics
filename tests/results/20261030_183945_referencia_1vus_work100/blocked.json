@@ -1,0 +1,10 @@
+{
+  "vus": 1,
+  "motivo": "Nginx no responde en /nginx-health",
+  "commit": "aba0747d0f12a74ff6e9e396fc017d96526a82c2",
+  "escenario": "referencia",
+  "fecha": "2026-10-30T18:39:50.2091461-03:00",
+  "detalle": "No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión. (localhost:8080)",
+  "estado": "bloqueado",
+  "work": 100
+}

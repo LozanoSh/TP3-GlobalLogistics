@@ -1,0 +1,148 @@
+Validacion local Rivamar - 2026-10-30
+
+$ docker version
+Client:
+ Version:           29.7.2
+ API version:       1.55
+ Go version:        go1.26.5
+ Git commit:        a7dcaa6
+ Built:             Wed Aug  5 18:31:33 2026
+ OS/Arch:           windows/amd64
+ Context:           desktop-linux
+failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+
+exit_code=1
+$ docker info
+Client:
+ Version:    29.7.2
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  agent: Docker AI Agent Runner (Docker Inc.)
+    Version:  v1.122.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-agent.exe
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.30.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.36.1-desktop.1
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-buildx.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v5.4.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.47
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Docker Inc.)
+    Version:  v0.4.3
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-desktop.exe
+  dhi: CLI for managing Docker Hardened Images (Docker Inc.)
+    Version:  v0.0.7
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-dhi.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.31
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-init.exe
+  mcp: Docker MCP Plugin (Docker Inc.)
+    Version:  v0.43.3
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-mcp.exe
+  model: Docker Model Runner (Docker Inc.)
+    Version:  v1.2.6
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-model.exe
+  offload: Docker Offload (Docker Inc.)
+    Version:  v0.6.10
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-offload.exe
+  pass: Docker Pass Secrets Manager Plugin (beta) (Docker Inc.)
+    Version:  v0.2.1
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-pass.exe
+  sandbox: "docker sandbox" is deprecated, use Docker Sandboxes instead (Docker Inc.)
+    Version:  v0.13.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-sandbox.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.24.0
+    Path:     C:\Users\LENOVO\.docker\cli-plugins\docker-scout.exe
+
+Server:
+failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+
+exit_code=1
+$ docker compose version
+Docker Compose version v5.4.0
+
+exit_code=0
+$ docker compose config -q
+exit_code=0
+$ docker compose config --services
+api3
+api1
+api2
+nginx
+
+exit_code=0
+$ node --version
+v24.15.0
+$ npm --version
+11.12.1
+$ (cd service; npm ci; npm test)
+npm ci: exit_code=0; 68 packages added; 0 vulnerabilities
+> tp3-globallogistics-api@1.0.0 test
+> node --test
+
+✔ GET /health responde 200 con estado ok (95.2576ms)
+✔ GET /health responde 503 durante el apagado (11.8643ms)
+✔ GET /api/instancia devuelve el hostname real (6.1257ms)
+✔ GET /api/cpu con work válido ejecuta trabajo (24.9733ms)
+✔ GET /api/cpu?work= responde 400 (4.6252ms)
+✔ GET /api/cpu?work=abc responde 400 (3.3673ms)
+✔ GET /api/cpu?work=0 responde 400 (3.2221ms)
+✔ GET /api/cpu?work=-3 responde 400 (3.3746ms)
+✔ GET /api/cpu?work=1.5 responde 400 (4.0684ms)
+✔ GET /api/cpu?work=1e3 responde 400 (3.511ms)
+✔ GET /api/cpu?work=2001 responde 400 (2.8434ms)
+✔ GET /api/cpu sin work responde 400 (2.5391ms)
+✔ GET /api/cpu con work repetido responde 400 (3.6248ms)
+✔ POST /envios/validar acepta la solicitud TP2 sin afirmar persistencia (39.4393ms)
+✔ POST /envios/validar acepta importe int64 maximo sin redondeo (5.2736ms)
+✔ POST /envios/validar rechaza importe superior a int64 (3.6652ms)
+✔ POST /envios/validar admite referencia opcional y servicio ESTANDAR (4.2746ms)
+✔ POST /envios/validar rechaza obligatorio faltante (4.0857ms)
+✔ POST /envios/validar rechaza nombre demasiado corto (5.6095ms)
+✔ POST /envios/validar rechaza pais invalido (3.668ms)
+✔ POST /envios/validar rechaza peso negativo (5.3258ms)
+✔ POST /envios/validar rechaza peso fuera de rango (3.5262ms)
+✔ POST /envios/validar rechaza moneda invalida (3.5912ms)
+✔ POST /envios/validar rechaza importe invalido (3.7764ms)
+✔ POST /envios/validar rechaza servicio invalido (3.496ms)
+✔ POST /envios/validar rechaza campo no permitido (2.9939ms)
+✔ POST /envios/validar rechaza JSON invalido con 400 (4.9989ms)
+✔ POST /envios/validar informa una sola vez el objeto faltante (6.4636ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 767.2228
+exit_code=0
+$ k6 version
+k6.exe v2.3.0 (commit/e088784614, go1.26.8, windows/amd64)
+$ k6 inspect tests/k6_escenario_referencia.js
+exit_code=0
+$ k6 inspect tests/k6_escenario_moderado.js
+exit_code=0
+$ k6 inspect tests/k6_escenario_extremo.js
+exit_code=0
+$ PowerShell parser (run_stress.ps1, run_extreme_ladder.ps1)
+OK
+$ Docker Desktop executable/service
+No se encontro ejecutable en la ruta estandar ni servicio com.docker.service
+$ tests/run_stress.ps1 con Docker apagado
+Se detuvo antes de k6: Docker Engine no responde; no se genero carpeta de ejecucion ni metricas
+k6 no se ejecuto contra el endpoint porque no existe el daemon/servicio accesible.
+
+$ intento run_stress.ps1 (1 VU, 1s)
+El runner verifico Docker y /nginx-health antes de k6. La conexion a localhost:8080 fue rechazada; k6 no se ejecuto.
+Registro: tests/results/20261030_183945_referencia_1vus_work100/blocked.json
